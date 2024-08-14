@@ -72,12 +72,11 @@ def key_scan_thread():
     global key
     while True:
         key_temp = readchar.readkey()
-        print('\r',end='')
         with lock:
             key = key_temp.lower()
-            if key == readchar.key.SPACE:
+            if key == ' ':
                 key = 'space'
-            elif key == readchar.key.CTRL_C:
+            elif key == 'q':
                 key = 'quit'
                 break
         sleep(0.01)
@@ -148,6 +147,12 @@ def main():
                         music.sound_play_threading('./sounds/hoot.wav')
                         print("QR Code detected:", current_qr_data)
                         tts.say("I found a QR code that says: " + current_qr_data)       
+                        if oled_present:
+                            # Update the OLED display with the current servo being reset
+                            display.fill(0)  # Clear the display
+                            display.text("QR " + current_qr_data, 0, 20, 1)  # Display QR data
+                            display.show()
+
 
                 key = None  # Reset key after processing
 
@@ -157,6 +162,13 @@ def main():
         sleep(0.05)          
      
 
+# Ensure thread termination in `main()`
 if __name__ == "__main__":
-    main()
-
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\nTerminated by user.")
+    finally:
+        # Cleanup code if needed
+        Vilib.camera_close()
+        print("Cleanup completed.")
