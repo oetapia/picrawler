@@ -52,6 +52,7 @@ key_dict = {
     'a': 'turn_left',
     'd': 'turn_right',
 }
+
 def renew_color_detect():
     global color
     color = random.choice(color_list)
@@ -62,8 +63,24 @@ def renew_color_detect():
     if oled_present:
             # Update the OLED display with the current servo being reset
             display.fill(0)  # Clear the display
-            display.text("Hoot says find  " + color, 0, 20, 1)  # Display which color
+            display.text("Hoot says find " + color, 0, 0, 1)  # Display which color
             display.show()
+
+
+def display_text_multiline(text, y_start=16, line_height=10):
+    max_line_length = 20  # Adjust based on your font and display width
+    lines = [text[i:i + max_line_length] for i in range(0, len(text), max_line_length)]
+    
+    if oled_present:
+        display.fill(0)  # Clear the display
+        display.text("QR Code", 0, 0, 1)  # Display "QR" on the first line
+        y = y_start
+        for line in lines:
+            display.text(line, 0, y, 1)  # Display each line at the appropriate y position
+            y += line_height  # Move to the next line position
+            if y + line_height > 64:  # Stop if we exceed the display height
+                break
+        display.show()
 
 
 key = None
@@ -79,13 +96,15 @@ def key_scan_thread():
             elif key == 'q':
                 key = 'quit'
                 break
+            elif key == 'y':
+                key = 'skip'
         sleep(0.01)
 
 def main():
     global key
     action = None
     Vilib.camera_start(vflip=False,hflip=False)
-    Vilib.display(local=True,web=True)
+    Vilib.display(local=False,web=True)
     Vilib.qrcode_detect_switch(True)
     sleep(0.8)
     speed = 80
@@ -114,7 +133,7 @@ def main():
             tts.say("awesome!")
             if oled_present:
                 display.fill(0)  # Clear the display
-                display.text("You found it.", 0, 0, 1)
+                display.text("You found " + color , 0, 0, 1)
                 display.show()
             sleep(0.05)   
             tts.say("you found " + color)
@@ -129,7 +148,14 @@ def main():
                 music.sound_play_threading('./sounds/hoot.wav')
                 sleep(0.05)   
                 tts.say("Try to find " + color)
+                if oled_present:
+                    display.fill(0)  # Clear the display
+                    display.text("Try to find "+ color , 0, 0, 1)
+                    display.show()
                 key =  None
+            elif key == 'skip':
+                    renew_color_detect()  # Skip the current color and choose a new one
+                    key = None
             elif key == 'quit':
                 _key_t.join()
                 Vilib.camera_close()
@@ -149,10 +175,7 @@ def main():
                         tts.say("I found a QR code that says: " + current_qr_data)       
                         if oled_present:
                             # Update the OLED display with the current servo being reset
-                            display.fill(0)  # Clear the display
-                            display.text("QR " + current_qr_data, 0, 20, 1)  # Display QR data
-                            display.show()
-
+                            display_text_multiline(current_qr_data)  # Display QR data on OLED
 
                 key = None  # Reset key after processing
 
