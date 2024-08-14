@@ -56,8 +56,13 @@ def display_images(image_paths, cycles=3, delay=0.5):
             else:
                 print(f"Error displaying image: {path}")
 
-# List of image file paths
-image_paths = ['eye.png', 'eye2.png', 'eye3.png', 'eye4.png']  # Update with your image file paths
+image_paths = [
+    '/home/pi/picrawler/examples/eyes/eye.png',
+    '/home/pi/picrawler/examples/eyes/eye2.png',
+    '/home/pi/picrawler/examples/eyes/eye3.png',
+    '/home/pi/picrawler/examples/eyes/eye4.png'
+]
+
 
 # Display images with cycling
-display_images(image_paths, cycles=3, delay=0.5)  # Adjust delay as needed
+display_images(image_paths, cycles=1, delay=0.5)  # Adjust delay as needed
