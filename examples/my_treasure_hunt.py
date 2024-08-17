@@ -10,6 +10,7 @@ import busio
 import adafruit_ssd1306
 
 
+
 # Initialize I2C and the OLED display
 i2c = busio.I2C(board.SCL, board.SDA)
 

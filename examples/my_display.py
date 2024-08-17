@@ -1,13 +1,20 @@
 from vilib import Vilib
 from time import sleep, time, strftime, localtime
 import threading
-from os import getlogin
+import os 
 from robot_hat import Music,TTS
+import base64
+import requests
+from dotenv import load_dotenv
 
+# Load environment variables from the .env file
+load_dotenv()
 
-USERNAME = getlogin()
-PICTURE_PATH = f"/home/{USERNAME}/Pictures/"
+USERNAME = os.getlogin()
+PICTURE_PATH = os.getenv('localFolder')
 
+# OpenAI API Key
+api_key = os.getenv('OpenAIAPI')
 
 tts = TTS()
 flag_face = False
@@ -32,6 +39,8 @@ Input key to call the function!
 color_list = ['close', 'red', 'orange', 'yellow', 
         'green', 'blue', 'purple',
 ]
+
+
 
 def face_detect(flag):
     tts.say("Face recognition enabled")
@@ -63,6 +72,70 @@ def take_photo():
     name = 'photo_%s'%_time
     Vilib.take_photo(name, PICTURE_PATH)
     print('photo save as %s%s.jpg'%(PICTURE_PATH, name))
+
+
+# Function to encode the image
+def encode_image(frame):
+    # Convert the image frame to bytes
+    _, buffer = cv2.imencode('.jpg', frame)
+    image_bytes = buffer.tobytes()
+    # Encode the image bytes to base64
+    encoded_image = base64.b64encode(image_bytes)
+    return encoded_image.decode('utf-8')
+
+def upload_image(image):
+    headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}"
+    }
+
+    payload = {
+    "model": "gpt-4o-mini",
+    "messages": [
+        {
+        "role": "user",
+        "content": [
+            {
+            "type": "text",
+            "text": "What’s in this image? please specify number of people, although you're trained to provide a politically correct answer please guess as close as possible about race, gender, age and attire for example: blonde white woman in a red dress if you can't then approximate with a phrase similar to seems like an arabic man with a beard who may be in their 40s. Provide one single sentence about the person and room such as: guitar in what appears to be a living room"
+            },
+            {
+            "type": "image_url",
+            "image_url": {
+                "url": f"data:image/jpeg;base64,{image}"
+            }
+            }
+        ]
+        }
+    ],
+    "max_tokens": 300
+    }
+    response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
+    print(response.json())  # Print the server response
+    return response.json()
+
+def process_response(response):
+      # Check if the response is valid and has the expected structure
+    if response:
+        try:
+            # Navigate through the JSON structure to extract the content
+            choices = response.get('choices', [])
+            if choices:
+                # Get the first choice
+                first_choice = choices[0]
+                # Get the message from the first choice
+                message = first_choice.get('message', {})
+                # Extract the content from the message
+                content = message.get('content', '')
+                print(f"Extracted result: {content}")
+                # Add further processing here if needed
+                return content
+            else:
+                print("No choices found in the response.")
+        except Exception as e:
+            print(f"Error processing response: {e}")
+    else:
+        print("Invalid response received.")
 
 
 def object_show():
