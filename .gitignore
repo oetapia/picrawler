@@ -6,3 +6,6 @@ myenv/
 # Build directories
 build/
 dist/
+
+# environmental vars
+.env

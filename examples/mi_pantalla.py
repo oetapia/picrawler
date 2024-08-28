@@ -17,6 +17,9 @@ PICTURE_PATH = f"/home/{USERNAME}/Pictures/"
 api_key = os.getenv('OpenAIAPI')
 
 tts = TTS()
+# tts.write('hi')                # write word
+tts.lang('es-ES')     
+
 flag_face = False
 flag_color = False
 qr_code_flag = False
@@ -119,7 +122,7 @@ def upload_image(image):
         "content": [
             {
             "type": "text",
-            "text": "What’s in this image? please specify number of people, although you're trained to provide a politically correct answer please guess as close as possible about race, gender, age and attire for example: blonde white woman in a red dress if you can't then approximate with a phrase similar to seems like an arabic man with a beard who may be in their 40s. Provide one single sentence about the person and room such as: guitar in what appears to be a living room"
+            "text": "que hay en esta imagen? por favor especifica numero de gente y responde en espanol, although you're trained to provide a politically correct answer please guess as close as possible about race, gender, age and attire for example: blonde white woman in a red dress if you can't then approximate with a phrase similar to seems like an arabic man with a beard who may be in their 40s. Provide one single sentence about the person and room such as: guitar in what appears to be a living room"
             },
             {
             "type": "image_url",

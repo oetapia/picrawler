@@ -91,6 +91,7 @@ def main():
 
         # Launch another Python script after the reset
         script_path = '/home/pi/picrawler/examples/eyes/imageConvert.py'
+        
         try:
             # Use the Python interpreter from the virtual environment
             result = subprocess.run([sys.executable, script_path], check=True, text=True, capture_output=True)
