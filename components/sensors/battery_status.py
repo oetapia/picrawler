@@ -7,6 +7,8 @@ def get_battery_state():
     """
     try:
         voltage = get_battery_voltage()
+        if voltage is None:
+            return "Error: No voltage detected", None
         if voltage > 7.4:
             return "Good", voltage
         elif voltage > 7.15:
@@ -22,8 +24,10 @@ def monitor_battery():
     """
     while True:
         status, voltage = get_battery_state()
-        print(f"Battery Voltage: {voltage:.2f}V")
-        print(status)
+        if voltage is not None:
+            print(f"Battery Voltage: {voltage:.2f}V")
+        else:
+            print(status)
         time.sleep(1)  # Delay between readings
 
 if __name__ == "__main__":
