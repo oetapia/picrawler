@@ -8,11 +8,11 @@ def get_battery_state():
     try:
         voltage = get_battery_voltage()
         if voltage > 7.4:
-            return "Battery is in good condition.", voltage
+            return "Good", voltage
         elif voltage > 7.15:
-            return "Battery level is moderate.", voltage
+            return "Moderate", voltage
         else:
-            return "Battery level is low.", voltage
+            return "Low", voltage
     except Exception as e:
         return f"Error: {e}", None
 

@@ -4,11 +4,8 @@ import subprocess
 from robot_hat import Servo
 from robot_hat.utils import reset_mcu
 from time import sleep
-from robot_hat import Music, TTS
-import board
-import busio
-import adafruit_ssd1306
-import argparse
+from robot_hat import Music, TTS, Pin
+from picrawler import Picrawler
 
 
 # Add the 'components' directory to sys.path
@@ -17,59 +14,26 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../comp
 
 # Import the 'oled' module from the 'components.display' package
 from screens import oled
+from sensors import battery_status
 
 
-
-def main():
-    global oled_present  # Declare that we are using the global variable
-
-    # Set up command-line argument parsing
-    parser = argparse.ArgumentParser(description='Run startup.py or check status.')
-    parser.add_argument('--status', action='store_true', help='Check the current mode of operation')
-    args = parser.parse_args()
-
-    if args.status:
-        # Initialize OLED to determine the mode
-        setup_oled()
-        # Print the mode of operation
-        if oled_present:
-            print("The system is running in robot_hat mode with OLED display.")
-        else:
-            print("The system is running without robot_hat mode (OLED display not present).")
-        return  # Exit the script after displaying the mode
-
-    # Continue with the existing startup.py functionality
+# Initialize components
+crawler = Picrawler()
+pin = Pin("LED")                      # create a Pin object from a digital pin
+btn = Pin("SW")                      # create a User Button object from a digital pin
+val = pin.value()          
+tts = TTS()
+music = Music()
+print("testing pins",val)
 
 
-    # Define the text for resetting legs
-    reset_message = "Resetting legs..."
-    oled.update_display(header=f"Action", text=f'{reset_message}')
+# Sound effect file
+intro = '/home/pi/picrawler/components/sounds/intro.wav'
+audio_effect = '/home/pi/picrawler/components/sounds/hoot.wav'
 
-    # Reset MCU
-    reset_mcu()
-    sleep(0.2)
 
-    # Initialize TTS
-    tts = TTS()
-
-    MANUAL = '''
-    Legs getting reset
-    '''
-
-    print(MANUAL)
-    tts.say("Resetting legs")
-
-    for i in range(12):
-        # Update the OLED display with the current servo being reset
-        oled.update_display(header=f"Action", text=f'Servo {i} resetting')
-        print(f"Servo {i} set to zero")
-        Servo(i).angle(10)
-        sleep(0.1)
-        Servo(i).angle(0)
-        sleep(0.1)
-
-    # After all servos have been reset, display a message indicating completion
-    oled.update_display(header=f"Action", text=f'Legs reset complete')
+def compact():
+    crawler.do_step([[60, 0, -30]]*4, 100)
     # Launch another Python script after the reset
     script_path = '/home/pi/picrawler/examples/eyes/imageConvert.py'
         
@@ -87,8 +51,47 @@ def main():
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
+
+
+def reset_legs():
+    # Reset MCU
+    reset_mcu()
+    # Define the text for resetting legs
+    reset_message = "Resetting legs..."
+    oled.update_display(header=f"Action", text=f'{reset_message}')
+    reset_message = "Resetting legs"
+    print(reset_message)
+    tts.say("Resetting legs")
+    pin.value(0.5)                         # set the digital pin on
+
+    for i in range(12):
+        # Update the OLED display with the current servo being reset
+        oled.update_display(header=f"Resetting", text=f'Servo {i}')
+        print(f"Servo {i} set to zero")
+        Servo(i).angle(10)
+        sleep(0.1)
+        Servo(i).angle(0)
+        sleep(0.1)
+
+    # After all servos have been reset, display a message indicating completion
+    oled.update_display(header=f"Completed", text=f'Legs reset')
+    pin.value(0)                         # set the digital pin to low level
+    compact()
     # Optionally, print a message to the terminal to indicate completion
     print("Legs reset complete. Exiting.")
+
+
+
+
+def main():
+    music.sound_play_threading(intro)
+    battery_level, battery_voltage = battery_status.get_battery_state()
+    print(f"Battery: {battery_level} {battery_voltage:.1f}")
+    oled.update_display(header=f"Battery", text=f'{battery_level} {battery_voltage:.1f}')
+    sleep(1)
+    reset_legs()
+    music.sound_play_threading(audio_effect)
+    music.sound_play_threading(audio_effect)
 
 if __name__ == '__main__':
     main()

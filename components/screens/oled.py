@@ -140,8 +140,8 @@ def update_display(header=None, text=None, y_start=16, line_height=10, icon=None
 if initialize_display():
     #list_display_methods()
     update_display(
-            header="Screen is ready",
-            text="Pass bootylicious texts",
+            header="System",
+            text="Starting...",
             icon='rectangle'
             )
 else:
