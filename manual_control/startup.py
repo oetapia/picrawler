@@ -1,11 +1,10 @@
 import os
 import sys
 import subprocess
-from robot_hat import Servo
 from robot_hat.utils import reset_mcu
 from time import sleep
 from robot_hat import Music, TTS, Pin
-from picrawler import Picrawler
+#from picrawler import Picrawler
 
 
 
@@ -41,7 +40,7 @@ def check_robot_hat_status():
 
 #if robot_hat_on: 
     # Initialize components
-crawler = Picrawler()
+#crawler = Picrawler()
 pin = Pin("LED")                      # create a Pin object from a digital pin
 btn = Pin("SW")                      # create a User Button object from a digital pin
 val = pin.value()          
@@ -51,54 +50,36 @@ print("Components initialized.")
 #else:
  #   print("Cannot initialize components; Robot HAT is off.")
 
+def run_script(script_path):
+    env = os.environ.copy()
+    env['VIRTUAL_ENV'] = '/home/pi/picrawler/examples/myenv'  # Adjust as necessary
+    result = subprocess.run([sys.executable, script_path], env=env, check=True, text=True, capture_output=True)
+    return result
 
 def compact():
-    crawler.do_step([[60, 0, -30]]*4, 100)
-    # Launch another Python script after the reset
     script_path = '/home/pi/picrawler/examples/eyes/imageConvert.py'
-        
+    keyboard_control = '/home/pi/picrawler/manual_control/scripts/keyboard_control.py'
+
     try:
-        # Use the Python interpreter from the virtual environment
-        result = subprocess.run([sys.executable, script_path], check=True, text=True, capture_output=True)
-        print("Other script executed successfully.")
+        result = run_script(script_path)
+        print("Image conversion script executed successfully.")
         print("Output:", result.stdout)
+
+        result = run_script(keyboard_control)
+        print("Keyboard control script executed successfully.")
+        print("Output:", result.stdout)
+
     except subprocess.CalledProcessError as e:
-        print(f"Error occurred while running the other script: {e}")
-        print("Error Output:", e.output)
+        print(f"Error occurred while running the script: {e}")
+        print("Error Output:", e.stderr)
         print("Return Code:", e.returncode)
+
     except FileNotFoundError as e:
         print(f"File not found error: {e}")
+
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
-
-
-def reset_legs():
-    # Reset MCU
-    reset_mcu()
-    # Define the text for resetting legs
-    reset_message = "Resetting legs..."
-    oled.update_display(header=f"Action", text=f'{reset_message}')
-    reset_message = "Resetting legs"
-    print(reset_message)
-    tts.say("Resetting legs")
-    pin.value(0.5)                         # set the digital pin on
-
-    for i in range(12):
-        # Update the OLED display with the current servo being reset
-        oled.update_display(header=f"Resetting", text=f'Servo {i}')
-        print(f"Servo {i} set to zero")
-        Servo(i).angle(10)
-        sleep(0.1)
-        Servo(i).angle(0)
-        sleep(0.1)
-
-    # After all servos have been reset, display a message indicating completion
-    oled.update_display(header=f"Completed", text=f'Legs reset')
-    pin.value(0)                         # set the digital pin to low level
-    compact()
-    # Optionally, print a message to the terminal to indicate completion
-    print("Legs reset complete. Exiting.")
 
 
 
@@ -110,14 +91,14 @@ def main():
     
     if robot_hat_on:
         print("starting up")
-        #music.sound_play_threading(library.intro)
+        music.sound_play_threading(library.intro_g)
         battery_level, battery_voltage = battery_status.get_battery_state()
         print(f"Battery: {battery_level} {battery_voltage:.1f}")
         oled.update_display(header=f"Battery", text=f'{battery_level} {battery_voltage:.1f}')
         sleep(1)
-        reset_legs()
-        #music.sound_play_threading(library.hoot)
-        #music.sound_play_threading(library.hoot)
+        #reset_legs()
+        music.sound_play_threading(library.hoot_g)
+        compact()
 
     else:
         print("robot hat off")    

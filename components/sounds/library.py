@@ -2,13 +2,25 @@ import os
 
 
 # Define the directory where the sound files are located
-SOUND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), 'sounds/source'))
+SOUND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), 'source'))
 
 # Sound file paths
 intro = os.path.join(SOUND_DIR, 'intro.wav')
 hoot = os.path.join(SOUND_DIR, 'hoot.wav')
 success = os.path.join(SOUND_DIR, 'success.wav')
 error = os.path.join(SOUND_DIR, 'error.wav')
+
+# Define the directory where the sound files are located
+GLADOS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), 'glados'))
+
+# Sound file paths
+intro_g = os.path.join(GLADOS_DIR, 'intro.wav')
+hoot_g = os.path.join(GLADOS_DIR, 'hoot.wav')
+success_g = os.path.join(GLADOS_DIR, 'success.wav')
+error_g = os.path.join(GLADOS_DIR, 'error.wav')
+
+
+
 
 def get_sound_path(sound_file):
     """
