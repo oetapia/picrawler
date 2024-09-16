@@ -223,9 +223,10 @@ class Picrawler(Robot):
         Returns the current leg positions from _step.
         Defaults to [[0, 0, 0]] if not set.
         """
-        current_pos = getattr(self, '_step', [[0, 0, 0]])
+        current_pos = self._step if hasattr(self, '_step') else [[0, 0, 0]]
         print(f"Getting current leg positions: {current_pos}")
         return current_pos
+
 
 
     def current_step_all_leg_angle(self):
