@@ -37,6 +37,17 @@ class Picrawler(Robot):
         self.current_coord = [[60, 0, -30], [60, 0, -30], [60, 0, -30], [60, 0, -30]]
         self.coord_temp = [[60, 0, -30], [60, 0, -30], [60, 0, -30], [60, 0, -30]]
 
+         # Initialize move_list
+        self.move_list = self.MoveList()
+        
+        # Initialize the current leg position as a default in move_list
+        self.move_list['current'] = [
+            [self.move_list.X_DEFAULT, self.move_list.Y_DEFAULT, self.move_list.Z_DEFAULT],
+            [self.move_list.X_TURN, self.move_list.Y_START, self.move_list.Z_DEFAULT],
+            [self.move_list.X_TURN, self.move_list.Y_START, self.move_list.Z_DEFAULT],
+            [self.move_list.X_DEFAULT, self.move_list.Y_DEFAULT, self.move_list.Z_DEFAULT]
+        ]
+
     def coord2polar(self, coord):
         x,y,z = coord
         
@@ -167,6 +178,13 @@ class Picrawler(Robot):
         return list.copy(translate_list)
 
     def do_step(self, _step, speed=50, israise=False):
+
+
+        """
+        Executes the movement step with the given speed, and updates the current leg positions in move_list.
+        """
+        # Debug: Print step before applying
+        print(f"Executing step: {step} with speed: {speed}")
         
         step_temp = []
         if isinstance(_step,str):
@@ -191,7 +209,23 @@ class Picrawler(Robot):
         # print('angles_temp：%s'%len(angles_temp))
         # print('angles_temp：%s'%len(self.coord_temp))
 
+        # Update current leg positions
+        self.move_list['current'] = _step
+
+        # Debug: After updating, print the current leg positions
+        print(f"Updated leg positions to: {self.move_list['current']}")
+
+        self.move_list['current'] = _step
         return list.copy(self.set_angle(angles_temp, speed, israise))
+    
+    def get_leg_positions(self):
+        """
+        Returns the current leg positions from _step.
+        Defaults to [[0, 0, 0]] if not set.
+        """
+        current_pos = getattr(self, '_step', [[0, 0, 0]])
+        print(f"Getting current leg positions: {current_pos}")
+        return current_pos
 
 
     def current_step_all_leg_angle(self):

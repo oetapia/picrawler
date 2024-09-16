@@ -24,37 +24,20 @@ Press keys on keyboard or use PS4 D-pad to control PiCrawler!
 
 
 def adjust_z_axis(z_offset):
-    current_step = crawler.move_list.get('current', [[0, 0, 0]])
-    print(current_step)
+    current_step = crawler.get_leg_positions()
 
-    #new_step=[[45, 45, -75], [45, 0, -75], [45, 0, -30], [45, 45, -75]]
-    
-    """    # Retrieve current step or default to neutral
-    current_step = crawler.move_list.get('current', [[0, 0, 0]])
-    
     # Debug: Print current step
     print(f"Current step: {current_step}")
-    
-    # Ensure current_step is a valid list of leg positions
-    if not all(isinstance(step, list) and len(step) == 3 for step in current_step):
-        print("Error: Invalid current_step format. Expected a list of [x, y, z] lists.")
-        return
 
-    # Create new step with adjusted Z-axis
-    new_step = []
+    """ new_step = []
     for leg_step in current_step:
-        if len(leg_step) != 3:
-            print(f"Error: Invalid leg_step format: {leg_step}. Expected [x, y, z].")
-            continue
-        
         x, y, z = leg_step
         new_step.append([x, y, z + z_offset])
     
     # Debug: Print new step
-    print(f"New step: {new_step}")
+    print(f"New step: {new_step}") """
     
-    # Apply new step """
-    #crawler.do_step(new_step, speed)
+    # Apply the new step with the z-axis adjust
 
 
 def handle_input(action,value=0):
