@@ -5,6 +5,7 @@ from picrawler import Picrawler
 from time import sleep
 import readchar
 
+
 # Add the 'components' directory to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../components')))
 from sensors import ps4_control
@@ -25,10 +26,11 @@ Press keys on keyboard or use PS4 D-pad to control PiCrawler!
 
 
 def adjust_z_axis(z_offset):
-    current_step = crawler.get_leg_positions()
+    
+    #current_step = crawler.get_leg_positions()
 
     # Debug: Print current step
-    print(f"Current step: {current_step}")
+    #print(f"Current step: {current_step}")
 
     """ new_step = []
     for leg_step in current_step:

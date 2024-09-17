@@ -6,6 +6,19 @@ class MyController(Controller):
         self.on_input_change = on_input_change
         self.deadzone = 10000  # Define a deadzone for the sticks (adjust this value as needed)
 
+    
+    
+    def on_R3_x_at_rest(self):
+        # Overriding to prevent unwanted prints
+        if callable(self.on_input_change):
+            self.on_input_change('R3_rest')    
+
+
+    def on_L3_y_at_rest(self):
+        # Overriding to prevent unwanted prints
+        if callable(self.on_input_change):
+            self.on_input_change('L3_rest')    
+
     def on_up_arrow_press(self):
         print("up arrow pressed")
         if callable(self.on_input_change):
@@ -94,6 +107,18 @@ class MyController(Controller):
             if callable(self.on_input_change):
                 self.on_input_change('L3_left', value)
 
+    def on_L3_x_at_rest(self):
+
+        if callable(self.on_input_change):
+            self.on_input_change('L3_rest')
+    
+    def on_R3_y_at_rest(self):
+
+        if callable(self.on_input_change):
+            self.on_input_change('R3_rest')
+
+            
+
     def on_L3_right(self, value):
         if abs(value) > self.deadzone:
             print(f"L3 stick moved right with value {value}")
@@ -136,8 +161,7 @@ class MyController(Controller):
             if callable(self.on_input_change):
                 self.on_input_change('R3_down', value)                 
 
-'''
+
 if __name__ == "__main__":
     controller = MyController(interface="/dev/input/js0", connecting_using_ds4drv=False)
     controller.listen()
-'''
