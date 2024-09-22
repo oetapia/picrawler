@@ -94,13 +94,18 @@ def main():
     
     if robot_hat_on:
         print("starting up")
-        music.sound_play_threading(library.intro_g)
+        music.sound_play_threading(library.intro)
         battery_level, battery_voltage = battery_status.get_battery_state()
+        sleep(2)
+        tts.say(f"battery level {battery_level}")
         print(f"Battery: {battery_level} {battery_voltage:.1f}")
-        oled.update_display(header=f"Battery", text=f'{battery_level} {battery_voltage:.1f}')
         sleep(1)
+        oled.update_display(header=f"Battery", text=f'{battery_level} {battery_voltage:.1f}')
+        tts.say("connect remote")
+        sleep(3)
         #reset_legs()
-        music.sound_play_threading(library.hoot_g)
+        #music.sound_play_threading(library.hoot_g)
+        tts.say("starting service")
         compact()
 
         # Set up button listener

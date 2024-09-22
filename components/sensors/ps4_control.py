@@ -108,9 +108,18 @@ class MyController(Controller):
         print("Square button pressed")
         if callable(self.on_input_change):
             self.on_input_change('square_press')
+
     def on_square_release(self):
         print("Square button released")
         
+    def on_playstation_button_press(self):
+        print("PS button pressed")
+        if callable(self.on_input_change):
+            self.on_input_change('ps_button_press')
+
+    def on_playstation_button_release(self):
+        print("PS button released")
+             
     
     def on_L1_press(self):
         print(f"L1 pressed")
@@ -131,6 +140,16 @@ class MyController(Controller):
         print(f"R2 pressed with pressure {value}")
         if callable(self.on_input_change):
             self.on_input_change('R2_press', value)
+
+    def on_L3_press(self):
+        print(f"L3 pressed")
+        if callable(self.on_input_change):
+            self.on_input_change('L3_press')
+
+    def on_R3_press(self):
+        print(f"R3 pressed")
+        if callable(self.on_input_change):
+            self.on_input_change('R3_press')            
 
     def on_L3_left(self, value):
         if abs(value) > self.deadzone:  # Ignore small movements within the deadzone
