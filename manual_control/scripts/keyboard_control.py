@@ -9,7 +9,7 @@ import readchar
 # Add the 'components' directory to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../components')))
 from sensors import ps4_control
-
+from sensors import accelerometer
 
 crawler = Picrawler()
 speed = 90
@@ -53,7 +53,10 @@ def custom_steps(name):
 
 
 def handle_input(action,value=0):
-    # Handle PS4 controller input and keyboard input
+
+     # Read accelerometer data
+    ax, ay, az = accelerometer.read_accel_data()  # Call the function to read data
+    print(f"AX: {ax}, AY: {ay}, AZ: {az}")    # Handle PS4 controller input and keyboard input
     if action in ('on_up_arrow_press', 'w'):
         print("Forward")
         crawler.do_action('forward', 1, speed)
@@ -121,18 +124,28 @@ def ps4_controller_thread():
             sleep(5)  # Wait for 5 seconds before retrying the connection
 
 
+
+
 def main():
     show_info()
     
+
     # Start PS4 controller thread
     controller_thread = threading.Thread(target=ps4_controller_thread, daemon=True)
     controller_thread.start()
+
+
+    # Initialize the accelerometer
+    accelerometer.main()  # Ensure this is your initialization function
+
     
     while True:
+
+        
         key = readchar.readkey()
         key = key.lower()
 
-        if key in 'wsadxygh':
+        if key in 'wsadyghbut':
             handle_input(key)  # Handle keyboard input
         
         elif key == readchar.key.CTRL_C:
