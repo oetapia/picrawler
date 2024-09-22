@@ -1,12 +1,43 @@
+import subprocess
+import time
 from pyPS4Controller.controller import Controller
+
+# Helper function to check for connected Bluetooth devices
+def is_bluetooth_device_connected():
+   # Check connected devices with a slight delay
+    time.sleep(1)  # Allow some time for the system to register connections
+    result = subprocess.run(['bluetoothctl', 'devices'], capture_output=True, text=True)
+    if result.returncode != 0:
+        print(f"Error checking devices: {result.stderr}")
+        return False
+
+    print("Connected devices output:\n", result.stdout)  # Debug output
+
+    # Check for the PS4 controller name in the output
+    return any("Wireless Controller" in line for line in result.stdout.split('\n'))
+
+def request_bluetooth_pairing():
+    print("No Bluetooth device detected. Please connect your PS4 controller.")
+    # Optionally, add commands to initiate pairing, like:
+    # subprocess.run(['bluetoothctl', 'scan', 'on'])
+    # subprocess.run(['bluetoothctl', 'pair', '<controller_mac_address>'])
+    # subprocess.run(['bluetoothctl', 'trust', '<controller_mac_address>'])
+    # subprocess.run(['bluetoothctl', 'connect', '<controller_mac_address>'])
+
 
 class MyController(Controller):
     def __init__(self, interface, connecting_using_ds4drv, on_input_change=None):
+        # Perform Bluetooth check inside the constructor
+        if is_bluetooth_device_connected():
+            print("Bluetooth device connected.")
+        else:
+            request_bluetooth_pairing()
+            raise ConnectionError("No Bluetooth device connected. Please pair your PS4 controller.")
+        
+        # Initialize the controller normally if Bluetooth is connected
         super().__init__(interface=interface, connecting_using_ds4drv=connecting_using_ds4drv)
         self.on_input_change = on_input_change
-        self.deadzone = 10000  # Define a deadzone for the sticks (adjust this value as needed)
-
-    
+        self.deadzone = 20000  # Define a deadzone for the sticks (adjust this value as needed)
     
     def on_R3_x_at_rest(self):
         # Overriding to prevent unwanted prints

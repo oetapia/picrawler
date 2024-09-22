@@ -66,6 +66,40 @@ def index():
                 </td>
                 </tr>
                 </table>
+        <script>
+            let wakeLock = null;
+
+            // Function to request a wake lock
+            const requestWakeLock = async () => {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log('Wake Lock is active');
+                } catch (err) {
+                    console.error(`${err.name}, ${err.message}`);
+                }
+            };
+
+            // Request the wake lock when the page loads
+            window.addEventListener('load', requestWakeLock);
+
+            // Re-acquire wake lock if it is lost (e.g., page becomes visible again)
+            document.addEventListener('visibilitychange', () => {
+                if (wakeLock !== null && document.visibilityState === 'visible') {
+                    requestWakeLock();
+                }
+            });
+
+            // Release the wake lock when the user leaves the page or closes the tab
+            window.addEventListener('beforeunload', () => {
+                if (wakeLock !== null) {
+                    wakeLock.release().then(() => {
+                        wakeLock = null;
+                        console.log('Wake Lock is released');
+                    });
+                }
+            });
+        </script>
+                
             </body>
         </html>
     '''

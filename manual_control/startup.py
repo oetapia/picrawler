@@ -21,6 +21,9 @@ from sounds import library
 
 robot_hat_on = False
 
+def button_handler(pin):
+    print("Hello World")  # Print message when button is pressed
+
 
 def check_robot_hat_status():
     global robot_hat_on
@@ -42,7 +45,7 @@ def check_robot_hat_status():
     # Initialize components
 #crawler = Picrawler()
 pin = Pin("LED")                      # create a Pin object from a digital pin
-btn = Pin("SW")                      # create a User Button object from a digital pin
+btn = Pin("SW", Pin.IN, Pin.PULL_UP)  # Initialize the button with pull-up resistor
 val = pin.value()          
 tts = TTS()
 music = Music()
@@ -58,7 +61,7 @@ def run_script(script_path):
 
 def compact():
     script_path = '/home/pi/picrawler/examples/eyes/imageConvert.py'
-    keyboard_control = '/home/pi/picrawler/manual_control/scripts/keyboard_control.py'
+    keyboard_control = '/home/pi/picrawler/manual_control/scripts/flaskvideo.py'
 
     try:
         result = run_script(script_path)
@@ -99,6 +102,10 @@ def main():
         #reset_legs()
         music.sound_play_threading(library.hoot_g)
         compact()
+
+        # Set up button listener
+        btn.irq(trigger=Pin.IRQ_FALLING, handler=button_handler)
+
 
     else:
         print("robot hat off")    

@@ -25,13 +25,21 @@ Press keys on keyboard or use PS4 D-pad to control PiCrawler!
 '''
 
 
-def adjust_z_axis(z_offset):
+step_two=[[45, 45, 0], [45, 0, 0], [45, 45, 0], [45, 45, 0]]
+step_one=[[45, 45, 45], [45, 0, -75], [45, 0, -75], [45, 0, -75]]
+step_three=[[75, 55, 45], [45, 0, -75], [45, 0, -75], [45, 0, -75]]
+step_four=[[-75, 50, 45], [45, 0, -75], [45, 0, -75], [45, 0, -75]]
+
+def custom_steps(name):
     
     #current_step = crawler.get_leg_positions()
 
     # Debug: Print current step
     #print(f"Current step: {current_step}")
 
+
+    speed = 80
+    
     """ new_step = []
     for leg_step in current_step:
         x, y, z = leg_step
@@ -39,6 +47,7 @@ def adjust_z_axis(z_offset):
     
     # Debug: Print new step
     print(f"New step: {new_step}") """
+    crawler.do_step(name,speed)
     
     # Apply the new step with the z-axis adjust
 
@@ -57,7 +66,7 @@ def handle_input(action,value=0):
     elif action in ('on_right_arrow_press', 'd'):
         print("Turn right")
         crawler.do_action('turn right', 1, speed)
-    elif action in ('x_press', 'x'):
+    elif action in ('x_press', 'b'):
         print("sit")
         #crawler.do_action('turn right', 1, speed
         sit_step = crawler.move_list['sit'][0]
@@ -70,32 +79,55 @@ def handle_input(action,value=0):
         crawler.do_step(stand_step, speed)
         #crawler.do_step(stand_step, speed)
     elif action in ('circle_press', 'h'):
-        print("z axis")
+        print("compact")
         # Adjust Z-axis to simulate standing
-        adjust_z_axis(0)  # Example value, adjust as needed
+        custom_steps(step_one)  # Example value, adjust as needed
+    elif action in ('square_press', 'g'):
+        print("custom 2")
+        # Adjust Z-axis to simulate standing
+        custom_steps(step_two)  # Example value, adjust as needed        
+
+    elif action in ('R1_press', 'u'):
+        print("custom 3")
+        # Adjust Z-axis to simulate standing
+        custom_steps(step_three)  # Example value, adjust as needed       
+
+    elif action in ('L1_press', 't'):
+        print("custom 4")
+        # Adjust Z-axis to simulate standing
+        custom_steps(step_four)  # Example value, adjust as needed       
 
 def show_info():
     print("\033[H\033[J", end='')  # clear terminal window
     print(manual)
 
+from time import sleep
+
 def ps4_controller_thread():
-    controller = ps4_control.MyController(
-        on_input_change=handle_input,
-        interface="/dev/input/js0",
-        connecting_using_ds4drv=False
-    )
-    try:
-        controller.listen()
-    except Exception as e:
-        print(f"Error initializing PS4 controller: {e}")
+    while True:
+        try:
+            # Attempt to initialize the PS4 controller
+            controller = ps4_control.MyController(
+                on_input_change=handle_input,
+                interface="/dev/input/js0",
+                connecting_using_ds4drv=False
+            )
+            print("PS4 controller connected. Listening for input...")
+            controller.listen()  # Start listening for input events
+            
+        except Exception as e:
+            print(f"Error initializing PS4 controller: {e}")
+            print("Retrying in 5 seconds...")
+            sleep(5)  # Wait for 5 seconds before retrying the connection
+
 
 def main():
     show_info()
-
+    
     # Start PS4 controller thread
     controller_thread = threading.Thread(target=ps4_controller_thread, daemon=True)
     controller_thread.start()
-
+    
     while True:
         key = readchar.readkey()
         key = key.lower()
