@@ -36,8 +36,8 @@ step_three=[[0, 75, 45], [45, 45, -45], [45, 45, -45], [45, 45, -45]]
 step_four=[[45, 45, 45], [45, 45, -45], [45, 45, -45], [45, 45, -45]]
 step_three_alt1 = [[10, 80, 30], [45, 45, -45], [45, 45, -45], [45, 45, -45]]
 step_four_alt1 = [[30, 60, 60], [45, 45, -45], [45, 45, -45], [45, 45, -45]]
-wave_1 = [[-15, 90, 60], [45, 45, -45], [45, 45, -45], [45, 45, -45]]
-wave_2 = [[15, 45, 30], [45, 45, -45], [45, 45, -45], [45, 45, -45]]
+wave_1 = [[45, 45, -45],[-15, 90, 60], [45, 45, -45], [45, 45, -45]]
+wave_2 = [[45, 45, -45],[15, 45, 30], [45, 45, -45], [45, 45, -45]]
 smelling_ground = [[30, 30, -30], [30, 30, -30], [60, 45, -75], [60, 45, -75]]
 looking_at_sky = [[60, 45, -75], [60, 45, -75], [30, 30, -30], [30, 30, -30]]
 
@@ -164,7 +164,7 @@ def ps4_controller_thread():
                 connecting_using_ds4drv=False
             )
             print("PS4 controller connected. Listening for input...")
-            tts.say("ready for commands")
+            tts.say("controller connected")
             controller.listen()  # Start listening for input events
             
         except Exception as e:

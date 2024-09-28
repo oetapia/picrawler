@@ -25,7 +25,7 @@ obstacle_detected = False
 def color_track():
     if Vilib.detect_obj_parameter['color_n'] != 0:
         coordinate_x = Vilib.detect_obj_parameter['color_x']
-        tts.say(f"Tracking {color}")
+        tts.say(f"Found {color}!")
 
         if coordinate_x < 100:
             crawler.do_action('turn left', 1, speed)
