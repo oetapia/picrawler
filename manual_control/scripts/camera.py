@@ -86,9 +86,9 @@ def main():
     qrcode_thread = None
 
     Vilib.camera_start(vflip=False,hflip=False)
-    Vilib.display(local=False,web=True)
+    Vilib.display(local=True,web=True)
     print(MANUAL)
-    keyboard_control.main()
+    #keyboard_control.main()
 
     while True:
         # readkey

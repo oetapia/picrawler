@@ -1,0 +1,33 @@
+2024-09-28 17:24:42,321 - Channel 0 -> AX: 0, AY: 0, AZ: 0
+2024-09-28 17:25:02,606 - Channel 0 -> AX: 64732, AY: 1132, AZ: 16876
+2024-09-28 17:25:03,607 - IR Sensor State: No obstacle
+2024-09-28 17:25:31,234 - Channel 0 -> AX: 64552, AY: 1204, AZ: 16832
+2024-09-28 17:25:32,235 - IR Sensor State: No obstacle
+2024-09-28 17:25:32,239 - Channel 0 -> AX: 64560, AY: 1156, AZ: 16796
+2024-09-28 17:25:33,240 - IR Sensor State: No obstacle
+2024-09-28 17:25:33,243 - Channel 0 -> AX: 64524, AY: 1172, AZ: 16716
+2024-09-28 17:25:34,244 - IR Sensor State: No obstacle
+2024-09-28 17:25:34,248 - Channel 0 -> AX: 64592, AY: 1232, AZ: 16712
+2024-09-28 17:25:35,249 - IR Sensor State: No obstacle
+2024-09-28 17:25:35,253 - Channel 0 -> AX: 64292, AY: 1052, AZ: 16616
+2024-09-28 17:25:36,254 - IR Sensor State: No obstacle
+2024-09-28 17:25:36,258 - Channel 0 -> AX: 64588, AY: 1116, AZ: 16744
+2024-09-28 17:25:37,259 - IR Sensor State: No obstacle
+2024-09-28 17:25:37,263 - Channel 0 -> AX: 64760, AY: 1128, AZ: 16812
+2024-09-28 17:25:38,264 - IR Sensor State: No obstacle
+2024-09-28 17:25:38,268 - Channel 0 -> AX: 64736, AY: 1204, AZ: 16788
+2024-09-28 17:25:39,269 - IR Sensor State: No obstacle
+2024-09-28 17:25:39,273 - Channel 0 -> AX: 64592, AY: 1216, AZ: 16560
+2024-09-28 17:25:40,275 - IR Sensor State: No obstacle
+2024-09-28 17:25:40,278 - Channel 0 -> AX: 64740, AY: 1128, AZ: 16820
+2024-09-28 17:25:57,370 - Channel 0 -> AX: 64652, AY: 1256, AZ: 16616
+2024-09-28 17:25:58,371 - IR Sensor State: No obstacle
+2024-09-28 17:25:58,374 - Channel 0 -> AX: 64560, AY: 1104, AZ: 16736
+2024-09-28 17:25:59,376 - IR Sensor State: No obstacle
+2024-09-28 17:25:59,379 - Channel 0 -> AX: 64536, AY: 1144, AZ: 16772
+2024-09-28 17:26:00,380 - IR Sensor State: No obstacle
+2024-09-28 17:26:00,384 - Channel 0 -> AX: 64652, AY: 1192, AZ: 16712
+2024-09-28 17:26:01,385 - IR Sensor State: No obstacle
+2024-09-28 17:26:01,389 - Channel 0 -> AX: 64532, AY: 1140, AZ: 16812
+2024-09-28 17:26:02,390 - IR Sensor State: No obstacle
+2024-09-28 17:26:02,394 - Channel 0 -> AX: 64496, AY: 1264, AZ: 16600

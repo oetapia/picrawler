@@ -1,10 +1,9 @@
 import os
 import sys
 import subprocess
-from robot_hat import Servo
 from robot_hat.utils import reset_mcu
 from time import sleep
-from robot_hat import Music, TTS, Pin
+from robot_hat import Servo, Music, TTS, Pin
 from picrawler import Picrawler
 
 
@@ -12,7 +11,7 @@ from picrawler import Picrawler
 
 # Add the 'components' directory to sys.path
 # Adjust this path according to the relative location from 'startup.py'
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../components')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../components')))
 
 # Import from the 'components.display' package
 from screens import oled
@@ -39,12 +38,10 @@ def check_robot_hat_status():
     
 
 
-#if robot_hat_on: 
-    # Initialize components
+#
 crawler = Picrawler()
 pin = Pin("LED")                      # create a Pin object from a digital pin
-btn = Pin("SW")                      # create a User Button object from a digital pin
-val = pin.value()          
+val = pin.value(0)    
 tts = TTS()
 music = Music()
 print("Components initialized.")
@@ -77,7 +74,7 @@ def reset_legs():
     pin.value(0)                         # set the digital pin to low level
     # Optionally, print a message to the terminal to indicate completion
     print("Legs reset complete. Exiting.")
-
+    pin.close() 
 
 
 
