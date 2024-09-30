@@ -2661,3 +2661,53 @@ jinja2.exceptions.TemplateNotFound: index.html
 2024-09-28 21:45:45,177 - Channel 0 -> AX: 4420, AY: 612, AZ: 19904
 2024-09-28 21:45:46,181 - Channel 0 -> AX: 63100, AY: 1020, AZ: 16432
 2024-09-28 21:45:47,185 - Channel 0 -> AX: 63544, AY: 900, AZ: 16560
+2024-09-29 08:15:27,259 - Initialization successful.
+2024-09-29 08:15:27,261 - Camera now open.
+2024-09-29 08:15:27,268 - Configuration successful!
+2024-09-29 08:15:27,402 - Camera started
+2024-09-29 08:15:27,424 - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.178.21:5000
+2024-09-29 08:15:27,425 - [33mPress CTRL+C to quit[0m
+2024-09-29 08:16:32,719 - 192.168.178.22 - - [29/Sep/2024 08:16:32] "GET / HTTP/1.1" 200 -
+2024-09-29 08:16:32,828 - 192.168.178.22 - - [29/Sep/2024 08:16:32] "GET /video_feed HTTP/1.1" 200 -
+2024-09-29 08:16:32,899 - 192.168.178.22 - - [29/Sep/2024 08:16:32] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2024-09-29 08:16:40,537 - 192.168.178.20 - - [29/Sep/2024 08:16:40] "GET / HTTP/1.1" 200 -
+2024-09-29 08:16:40,611 - 192.168.178.20 - - [29/Sep/2024 08:16:40] "GET /video_feed HTTP/1.1" 200 -
+2024-09-29 08:18:38,492 - 192.168.178.22 - - [29/Sep/2024 08:18:38] "GET / HTTP/1.1" 200 -
+2024-09-29 08:18:38,602 - 192.168.178.22 - - [29/Sep/2024 08:18:38] "GET /video_feed HTTP/1.1" 200 -
+2024-09-29 08:18:53,340 - Camera stopped
+2024-09-29 08:18:53,745 - Camera closed successfully.
+2024-09-29 08:28:28,181 - Initialization successful.
+2024-09-29 08:28:28,182 - Camera now open.
+2024-09-29 08:28:28,192 - Configuration successful!
+2024-09-29 08:28:28,322 - Camera started
+2024-09-29 08:28:28,369 - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.178.21:5000
+2024-09-29 08:28:28,369 - [33mPress CTRL+C to quit[0m
+2024-09-30 08:01:23,390 - Initialization successful.
+2024-09-30 08:01:23,391 - Camera now open.
+2024-09-30 08:01:23,397 - Configuration successful!
+2024-09-30 08:01:23,515 - Camera started
+2024-09-30 08:01:23,541 - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.178.21:5000
+2024-09-30 08:01:23,541 - [33mPress CTRL+C to quit[0m
+2024-09-30 08:04:19,065 - 192.168.178.22 - - [30/Sep/2024 08:04:19] "GET / HTTP/1.1" 200 -
+2024-09-30 08:04:19,166 - 192.168.178.22 - - [30/Sep/2024 08:04:19] "GET /video_feed HTTP/1.1" 200 -
+2024-09-30 08:04:19,254 - 192.168.178.22 - - [30/Sep/2024 08:04:19] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2024-09-30 22:06:06,219 - Initialization successful.
+2024-09-30 22:06:06,220 - Camera now open.
+2024-09-30 22:06:06,226 - Configuration successful!
+2024-09-30 22:06:06,382 - Camera started
+2024-09-30 22:06:06,408 - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.178.21:5000
+2024-09-30 22:06:06,408 - [33mPress CTRL+C to quit[0m
+2024-09-30 22:06:42,002 - 192.168.178.22 - - [30/Sep/2024 22:06:42] "GET / HTTP/1.1" 200 -
+2024-09-30 22:06:42,116 - 192.168.178.22 - - [30/Sep/2024 22:06:42] "GET /video_feed HTTP/1.1" 200 -

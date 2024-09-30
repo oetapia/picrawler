@@ -59,15 +59,16 @@ def normalize_accel(ax, ay, az):
 def classify_orientation(ax_g, ay_g, az_g, position):
     """Classify orientation based on threshold values for each accelerometer."""
     thresholds = {
-        "Front Left": {"ax": 0.2, "ay": 0.2, "az": 0.2},
+        "Front Left": {"ax": 0.3, "ay": 0.3, "az": 0.5},  # Adjusted thresholds
         "Back Right": {"ax": 0.3, "ay": 0.4, "az": 0.3},  # Adjust as necessary
         "Inside": {"ax": 0.2, "ay": 0.2, "az": 0.2}
     }
 
+
     baseline = {
         "Front Left": (16484, 1720, 63764),
         "Back Right": (17144, 64176, 628),
-        "Inside": (64876, 64432, 17560)
+        "Inside": (64876, 616, 16612)
     }
 
     # Calculate deviations from baseline

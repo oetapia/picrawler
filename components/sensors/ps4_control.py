@@ -132,12 +132,12 @@ class MyController(Controller):
             self.on_input_change('R1_press')    
 
     def on_L2_press(self, value):
-        print(f"L2 pressed with pressure {value}")
+        #print(f"L2 pressed with pressure {value}")
         if callable(self.on_input_change):
             self.on_input_change('L2_press', value)
 
     def on_R2_press(self, value):
-        print(f"R2 pressed with pressure {value}")
+        #print(f"R2 pressed with pressure {value}")
         if callable(self.on_input_change):
             self.on_input_change('R2_press', value)
 
@@ -151,12 +151,6 @@ class MyController(Controller):
         if callable(self.on_input_change):
             self.on_input_change('R3_press')            
 
-    def on_L3_left(self, value):
-        if abs(value) > self.deadzone:  # Ignore small movements within the deadzone
-            print(f"L3 stick moved left with value {value}")
-            if callable(self.on_input_change):
-                self.on_input_change('L3_left', value)
-
     def on_L3_x_at_rest(self):
 
         if callable(self.on_input_change):
@@ -167,6 +161,11 @@ class MyController(Controller):
         if callable(self.on_input_change):
             self.on_input_change('R3_rest')
 
+    def on_L3_left(self, value):
+        if abs(value) > self.deadzone:  # Ignore small movements within the deadzone
+            #print(f"L3 stick moved left with value {value}")
+            if callable(self.on_input_change):
+                self.on_input_change('L3_left', value)
             
 
     def on_L3_right(self, value):
@@ -189,27 +188,27 @@ class MyController(Controller):
 
     def on_R3_left(self, value):
         if abs(value) > self.deadzone:
-            print(f"R3 stick moved left with value {value}")
+            #print(f"R3 stick moved left with value {value}")
             if callable(self.on_input_change):
-                self.on_input_change('R3_left', value)
+                self.on_input_change('R3_leftright', value)
 
     def on_R3_right(self, value):
         if abs(value) > self.deadzone:
-            print(f"R3 stick moved right with value {value}")
+            #print(f"R3 stick moved right with value {value}")
             if callable(self.on_input_change):
-                self.on_input_change('R3_right', value)
+                self.on_input_change('R3_leftright', value)
 
     def on_R3_up(self, value):
         if abs(value) > self.deadzone:
             print(f"R3 stick moved up with value {value}")
             if callable(self.on_input_change):
-                self.on_input_change('R3_up', value)            
+                self.on_input_change('R3_updown', value)            
 
     def on_R3_down(self, value):
         if abs(value) > self.deadzone:
             print(f"R3 stick moved down with value {value}")
             if callable(self.on_input_change):
-                self.on_input_change('R3_down', value)                 
+                self.on_input_change('R3_updown', value)                 
 
 
 if __name__ == "__main__":
