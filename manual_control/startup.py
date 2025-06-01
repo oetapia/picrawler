@@ -104,7 +104,7 @@ def main():
         oled.update_display(header="Battery", text=f'{battery_level} {battery_voltage:.1f}')
         tts.say("Choose function")
            # Attach interrupt to button
-        oled.update_display(header=f"Function", text=f'RST: Autopilot, USR: Keyboard control')
+        oled.update_display(header=f"Function", text=f'USR: Keyboard control, RST: Autopilot')
 
         # Attach interrupts to buttons
         btn1.irq(trigger=Pin.IRQ_FALLING | Pin.IRQ_RISING, handler=lambda pin: button_handler(btn1))
