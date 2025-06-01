@@ -13,6 +13,7 @@ import numpy as np
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../components')))
 from sensors import ps4_control
 from sensors import accelerometer
+from screens import imageConvert
 
 
 
@@ -302,6 +303,8 @@ def ps4_controller_thread():
 
 
 def main():
+
+    imageConvert.main()
     show_info()
     
 

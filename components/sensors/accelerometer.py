@@ -107,7 +107,7 @@ def twos_complement(val, bits=16):
 
 
 def main():
-    for channel in range(3):  # Assuming you have three sensors on channels 0, 1, and 2
+    for channel in range(1):  # Assuming you have three sensors on channels 0, 1, and 2
         select_channel(channel)  # Select the channel for the accelerometer
         wake_mpu6050()          # Wake up the MPU-6050
         ax, ay, az = read_accel_data()

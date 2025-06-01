@@ -1,20 +1,24 @@
 from vilib import Vilib
-from time import sleep, time, strftime, localtime
+from time import sleep, strftime, localtime
 import threading
-from os import getlogin
-import keyboard_control
+import signal
+import readchar
+from os import environ
 
-USERNAME = getlogin()
+USERNAME = environ.get('USER', 'unknown')
 PICTURE_PATH = f"/home/{USERNAME}/Pictures/"
-
 
 flag_face = False
 flag_color = False
 qr_code_flag = False
+running = True
+
+color_list = ['close', 'red', 'orange', 'yellow', 'green', 'blue', 'purple']
 
 MANUAL = '''
 Input key to call the function!
-    q: Take photo
+    q: Quit program
+    p: Take photo
     1: Color detect : red
     2: Color detect : orange
     3: Color detect : yellow
@@ -27,110 +31,104 @@ Input key to call the function!
     s: Display detected object information
 '''
 
-color_list = ['close', 'red', 'orange', 'yellow', 
-        'green', 'blue', 'purple',
-]
+def handle_exit(signum, frame):
+    """Handle graceful exit on CTRL+C."""
+    global running
+    print("\nExiting program...")
+    running = False
 
 def face_detect(flag):
-    print("Face Detect:" + str(flag))
+    """Toggle face detection on or off."""
+    print(f"Face Detect: {'ON' if flag else 'OFF'}")
     Vilib.face_detect_switch(flag)
 
-
-def qrcode_detect():
-    global qr_code_flag
-    if qr_code_flag == True:
-        Vilib.qrcode_detect_switch(True)
-        print("Waitting for QR code")
-
-    text = None
-    while True:
-        temp = Vilib.detect_obj_parameter['qr_data']
-        if temp != "None" and temp != text: 
-            text = temp         
-            print('QR code:%s'%text)
-        if qr_code_flag == False:          
-            break
-        sleep(0.5)
-    Vilib.qrcode_detect_switch(False)
-
-
 def take_photo():
-    _time = strftime('%Y-%m-%d-%H-%M-%S',localtime(time()))
-    name = 'photo_%s'%_time
+    """Take a photo and save it to the specified directory."""
+    _time = strftime('%Y-%m-%d-%H-%M-%S', localtime())
+    name = f'photo_{_time}'
     Vilib.take_photo(name, PICTURE_PATH)
-    print('photo save as %s%s.jpg'%(PICTURE_PATH, name))
-
+    print(f'Photo saved as {PICTURE_PATH}{name}.jpg')
 
 def object_show():
-    global flag_color, flag_face
-
-    if flag_color is True:
+    """Display detected object information."""
+    if flag_color:
         if Vilib.detect_obj_parameter['color_n'] == 0:
             print('Color Detect: None')
         else:
-            color_coodinate = (Vilib.detect_obj_parameter['color_x'],Vilib.detect_obj_parameter['color_y'])
-            color_size = (Vilib.detect_obj_parameter['color_w'],Vilib.detect_obj_parameter['color_h'])
-            print("[Color Detect] ","Coordinate:",color_coodinate,"Size",color_size)
-
-    if flag_face is True:
+            color_coordinate = (Vilib.detect_obj_parameter['color_x'], Vilib.detect_obj_parameter['color_y'])
+            color_size = (Vilib.detect_obj_parameter['color_w'], Vilib.detect_obj_parameter['color_h'])
+            print(f"[Color Detect] Coordinate: {color_coordinate}, Size: {color_size}")
+    if flag_face:
         if Vilib.detect_obj_parameter['human_n'] == 0:
             print('Face Detect: None')
         else:
-            human_coodinate = (Vilib.detect_obj_parameter['human_x'],Vilib.detect_obj_parameter['human_y'])
-            human_size = (Vilib.detect_obj_parameter['human_w'],Vilib.detect_obj_parameter['human_h'])
-            print("[Face Detect] ","Coordinate:",human_coodinate,"Size",human_size)
+            human_coordinate = (Vilib.detect_obj_parameter['human_x'], Vilib.detect_obj_parameter['human_y'])
+            human_size = (Vilib.detect_obj_parameter['human_w'], Vilib.detect_obj_parameter['human_h'])
+            print(f"[Face Detect] Coordinate: {human_coordinate}, Size: {human_size}")
 
+def handle_input(key):
+    """Handle user input and trigger the corresponding action."""
+    global flag_face, flag_color, qr_code_flag, running
+    if key == 'q':
+        print("Quit")
+        running = False
+    elif key == 'p':
+        take_photo()
+    elif key in '0123456':
+        index = int(key)
+        if index == 0:
+            flag_color = False
+            Vilib.color_detect('close')
+        else:
+            flag_color = True
+            Vilib.color_detect(color_list[index])
+        print(f'Color detect: {color_list[index]}')
+    elif key == 'f':
+        flag_face = not flag_face
+        face_detect(flag_face)
+    elif key == 'r':
+        if not qr_code_flag:
+            qr_code_flag = True
+            print("QR Code Detection: ON")
+            Vilib.qrcode_detect_switch(True)
+        else:
+            qr_code_flag = False
+            print("QR Code Detection: OFF")
+            Vilib.qrcode_detect_switch(False)
+    elif key == 's':
+        object_show()
 
-def main():
-    global flag_face, flag_color, qr_code_flag
-    qrcode_thread = None
-
-    Vilib.camera_start(vflip=False,hflip=False)
-    Vilib.display(local=True,web=True)
-    print(MANUAL)
-    #keyboard_control.main()
-
-    while True:
-        # readkey
-        key = input()
-        key = key.lower()
-        # take photo
-        if key == 'q':
-            take_photo()
-        # color detect         
-        elif key != '' and key in ('0123456'):  # '' in ('0123') -> True
-            index = int(key)
-            if index == 0:
-                flag_color = False
-                Vilib.color_detect('close')
-            else:
-                flag_color = True
-                Vilib.color_detect(color_list[index]) # color_detect(color:str -> color_name/close)
-            print('Color detect : %s'%color_list[index])  
-        # face detection
-        elif key =="f":
-            flag_face = not flag_face
-            face_detect(flag_face)
-        # qrcode detection
-        elif key =="r":
-            qr_code_flag = not qr_code_flag
-            if qr_code_flag == True:
-                if qrcode_thread == None or not qrcode_thread.is_alive():
-                    qrcode_thread = threading.Thread(target=qrcode_detect)
-                    qrcode_thread.setDaemon(True)
-                    qrcode_thread.start()
-            else:
-                if qrcode_thread != None and qrcode_thread.is_alive(): 
-                   # wait for thread to end 
-                    qrcode_thread.join()
-                    print('QRcode Detect: close')
-        # show detected object information
-        elif key == "s":
-            object_show()
-
+def qr_code_loop():
+    """Poll for QR codes when QR code detection is enabled."""
+    global qr_code_flag
+    while running:
+        if qr_code_flag:
+            text = Vilib.detect_obj_parameter['qr_data']
+            if text != "None":
+                print(f"QR Code: {text}")
         sleep(0.5)
 
+def main():
+    """Main function to run the program."""
+    global running
+    Vilib.camera_start(vflip=False, hflip=False)
+    Vilib.display(local=True, web=True)
+    print(MANUAL)
+    signal.signal(signal.SIGINT, handle_exit)  # Capture CTRL+C
+
+    qr_thread = threading.Thread(target=qr_code_loop)
+    qr_thread.setDaemon(True)
+    qr_thread.start()
+
+    try:
+        while running:
+            key = readchar.readkey()
+            handle_input(key)
+            sleep(0.02)
+    finally:
+        Vilib.qrcode_detect_switch(False)  # Ensure QR code detection is off
+        Vilib.display(local=False, web=False)  # Turn off camera display
+        print("Cleaned up resources.")
 
 if __name__ == "__main__":
     main()
-

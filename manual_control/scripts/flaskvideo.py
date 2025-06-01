@@ -5,6 +5,7 @@ import time
 import threading
 import keyboard_control  # Import your keyboard_control module
 
+
 app = Flask(__name__)
 
 camera = None
@@ -110,7 +111,7 @@ def start_keyboard_control():
 
 if __name__ == '__main__':
     init_camera()  # Initialize the camera
-
+    
     # Start keyboard control in a separate thread
     keyboard_thread = threading.Thread(target=start_keyboard_control, daemon=True)
     keyboard_thread.start()

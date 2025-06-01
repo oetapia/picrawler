@@ -61,15 +61,15 @@ def button_handler(pin):
 
             if pin == btn1:
                 print("Button 1 pressed")
+                tts.say("Starting manual control")
                 oled.update_display(header=f"Starting...", text=f'Keyboard control')
                 run_script('/home/pi/picrawler/manual_control/scripts/flaskvideo.py')  # Run script 1
-                run_script('/home/pi/picrawler/examples/eyes/imageConvert.py')
-
+    
             elif pin == btn2:
                 print("Button 2 pressed")
+                tts.say("Starting automated control")
                 oled.update_display(header=f"Starting...", text=f'Autopilot tracking')
                 run_script('/home/pi/picrawler/manual_control/scripts/tracking.py')  # Run script 2
-                run_script('/home/pi/picrawler/examples/eyes/imageConvert.py')
 
             service_started = True
 

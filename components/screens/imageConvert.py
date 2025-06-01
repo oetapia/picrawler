@@ -65,4 +65,9 @@ image_paths = [
 
 
 # Display images with cycling
-display_images(image_paths, cycles=1, delay=0.5)  # Adjust delay as needed
+def main():
+    display_images(image_paths, cycles=1, delay=0.3)  # Adjust delay as needed
+
+
+if __name__ == "__main__":
+    main()
