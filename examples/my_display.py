@@ -53,7 +53,7 @@ def qrcode_detect():
     global qr_code_flag
     if qr_code_flag == True:
         Vilib.qrcode_detect_switch(True)
-        print("Waitting for QR code")
+        print("Waiting for QR code")
 
     text = None
     while True:

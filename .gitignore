@@ -9,3 +9,9 @@ dist/
 
 # environmental vars
 .env
+
+# specific
+recordings/
+logs/
+__pycache__/
+data/
