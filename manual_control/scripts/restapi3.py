@@ -48,7 +48,7 @@ ICONS = {
 # Import your existing modules
 from picrawler import Picrawler
 from robot_hat import TTS
-from components.screens import imageConvert
+from components.screens import imageConvert, oled
 from components.server.flask import create_app
 
 # Initialize global objects
@@ -276,7 +276,7 @@ def api_speak():
         # Limit text length for safety
         text = text[:100]
         tts.say(text)
-        
+        oled.update_display(header="Speaking:", text=text)
         return create_response(True, f"Speaking: '{text}'")
         
     except Exception as e:
