@@ -184,7 +184,7 @@ class Picrawler(Robot):
         Executes the movement step with the given speed, and updates the current leg positions in move_list.
         """
         # Debug: Print step before applying
-        print(f"Executing step: {step} with speed: {speed}")
+        print(f"Executing step: {_step} with speed: {speed}")
         
         step_temp = []
         if isinstance(_step,str):

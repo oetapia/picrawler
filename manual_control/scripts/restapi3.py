@@ -4,7 +4,7 @@ import sys
 import os
 import socket
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 import time
 from datetime import datetime
 from flask import request, jsonify
