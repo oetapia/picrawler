@@ -66,6 +66,7 @@ class RobotState(Enum):
     AVOIDING_OBSTACLE = "avoiding_obstacle"
     AVOIDING_FLOOR_DANGER = "avoiding_floor_danger"
     STUCK = "stuck"
+    AIRBORNE = "airborne"
 
 class SelfAwarePiCrawler:
     def __init__(self):
@@ -108,7 +109,8 @@ class SelfAwarePiCrawler:
         self.tactile_poses = {
             'check_right': np.array([[45, 45, -45], [20, 80, 45], [45, 45, -45], [45, 45, -45]]),  # Right front leg extended
             'check_left': np.array([[20, 80, 45], [45, 45, -45], [45, 45, -45], [45, 45, -45]]),   # Left front leg extended
-            'neutral': np.array([[45, 45, -45], [45, 45, -45], [45, 45, -45], [45, 45, -45]])      # Normal spread pose
+            'neutral': np.array([[45, 45, -45], [45, 45, -45], [45, 45, -45], [45, 45, -45]]),     # Normal spread pose
+            'compact': np.array([[45, 0, 0], [45, 0, 0], [45, 45, 0], [45, 45, 0]])               # Compact/tucked pose
         }
         
         # Tactile sensing state
@@ -145,8 +147,11 @@ class SelfAwarePiCrawler:
         """Check for floor-based dangers using IR sensors"""
         try:
             proximity_status = ir_distance.check_proximity()
+
+            if proximity_status == "airborne":
+                return ["airborne"]
+
             dangers = []
-            
             if "danger_front" in proximity_status:
                 dangers.append("front")
             if "danger_back" in proximity_status:
@@ -155,7 +160,7 @@ class SelfAwarePiCrawler:
                 dangers.append("left")
             if "danger_right" in proximity_status:
                 dangers.append("right")
-            
+
             return dangers
         except Exception as e:
             safe_print(f"Floor sensor error: {e}")
@@ -165,10 +170,17 @@ class SelfAwarePiCrawler:
         """Handle detected floor dangers"""
         if not dangers:
             return False
-        
+
+        if dangers == ["airborne"]:
+            self.change_state(RobotState.AIRBORNE)
+            safe_print(f"{ICONS['warning']} Airborne detected - moving to compact position")
+            self.announce_status("Airborne! Tucking legs")
+            self.custom_pose(self.tactile_poses['compact'])
+            return True
+
         self.change_state(RobotState.AVOIDING_FLOOR_DANGER)
         self.consecutive_floor_dangers += 1
-        
+
         safe_print(f"{ICONS['warning']} Floor danger detected: {', '.join(dangers)}")
         
         if "front" in dangers:
