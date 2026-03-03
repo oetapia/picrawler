@@ -355,7 +355,7 @@ def main():
     finally:
         safe_print(f"{ICONS['recycle']} Cleaning up...")
         try:
-            custom_steps(spread_out)  # Return to safe position
+            custom_steps(compact)  # Return to safe position
         except:
             pass
 

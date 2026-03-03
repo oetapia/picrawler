@@ -10,7 +10,6 @@ import numpy as np
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
-from components.sensors import ps4_control
 from components.screens import imageConvert, oled
 
 crawler = Picrawler()
@@ -181,6 +180,7 @@ def show_info():
 def ps4_controller_thread():
     while True:
         try:
+            from components.sensors import ps4_control
             controller = ps4_control.MyController(
                 on_input_change=handle_input,
                 interface="/dev/input/js0",

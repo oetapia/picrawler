@@ -10,7 +10,7 @@ import sys
 import time
 import random
 from datetime import datetime
-from threading import Thread, Event
+from threading import Event
 from enum import Enum
 
 # Check if terminal supports UTF-8 output
@@ -51,14 +51,13 @@ ICONS = {
     'explosion': get_icon('💥', '[ERROR]')
 }
 
-# Add the components directory to sys.path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../components')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 # Import robot modules
 from picrawler import Picrawler
 from robot_hat import Ultrasonic, TTS
 from robot_hat import Pin
-from sensors import ir_distance
+from components.sensors import ir_distance
 import numpy as np
 
 class RobotState(Enum):
@@ -67,8 +66,6 @@ class RobotState(Enum):
     AVOIDING_OBSTACLE = "avoiding_obstacle"
     AVOIDING_FLOOR_DANGER = "avoiding_floor_danger"
     STUCK = "stuck"
-    PAUSED = "paused"
-    EMERGENCY = "emergency"
 
 class SelfAwarePiCrawler:
     def __init__(self):
@@ -186,7 +183,11 @@ class SelfAwarePiCrawler:
         
         elif "back" in dangers:
             self.announce_status("Ledge behind!")
-            self.crawler.do_action('forward', 2, self.speed)
+            front_distance = self.get_obstacle_distance()
+            if front_distance > self.obstacle_distance:
+                self.crawler.do_action('forward', 2, self.speed)
+            else:
+                self.crawler.do_action('turn right', 2, self.speed)
             time.sleep(0.5)
         
         elif "left" in dangers and "right" not in dangers:
@@ -229,7 +230,7 @@ class SelfAwarePiCrawler:
             floor_status = self.check_floor_dangers()
             
             # If right leg doesn't detect expected floor pattern, assume obstacle
-            if 'right' in floor_status or len(floor_status) > 0:
+            if 'right' in floor_status:
                 obstacles_detected['right'] = True
                 safe_print(f"   {ICONS['warning']} Right side obstacle detected via tactile sensing")
             
@@ -245,7 +246,7 @@ class SelfAwarePiCrawler:
             floor_status = self.check_floor_dangers()
             
             # If left leg doesn't detect expected floor pattern, assume obstacle
-            if 'left' in floor_status or len(floor_status) > 0:
+            if 'left' in floor_status:
                 obstacles_detected['left'] = True
                 safe_print(f"   {ICONS['warning']} Left side obstacle detected via tactile sensing")
             
@@ -316,38 +317,6 @@ class SelfAwarePiCrawler:
         time.sleep(0.4)
         
         return True
-    def handle_obstacle_avoidance_legacy(self, distance):
-        """Legacy obstacle avoidance method (kept for fallback)"""
-        self.change_state(RobotState.AVOIDING_OBSTACLE)
-        self.consecutive_obstacles += 1
-        
-        safe_print(f"{ICONS['obstacle']} Obstacle at {distance}cm - avoiding")
-        
-        if distance <= 10:  # Very close obstacle
-            self.announce_status("Very close obstacle!")
-            self.crawler.do_action('backward', 3, self.speed)
-            time.sleep(0.5)
-            # Random turn to avoid getting stuck
-            turn_direction = random.choice(['turn left', 'turn right'])
-            self.crawler.do_action(turn_direction, 3, self.speed)
-        
-        elif distance <= self.obstacle_distance:
-            # Choose avoidance strategy based on consecutive obstacles
-            if self.consecutive_obstacles > 3:
-                # Try more aggressive avoidance
-                self.crawler.do_action('backward', 2, self.speed)
-                time.sleep(0.3)
-                turn_amount = random.randint(3, 5)
-                turn_direction = random.choice(['turn left', 'turn right'])
-                self.crawler.do_action(turn_direction, turn_amount, self.speed)
-            else:
-                # Standard avoidance
-                self.crawler.do_action('backward', 1, self.speed)
-                time.sleep(0.2)
-                self.crawler.do_action('turn right', 2, self.speed)
-        
-        time.sleep(0.3)
-        return True
 
     def execute_escape_pattern(self):
         """Execute escape pattern when stuck"""
@@ -368,6 +337,8 @@ class SelfAwarePiCrawler:
         self.stuck_counter = 0
         self.consecutive_obstacles = 0
         self.consecutive_floor_dangers = 0
+        self.last_successful_move = time.time()
+        self.known_obstacles = {'left': False, 'right': False}
 
     def change_state(self, new_state):
         """Change robot state with logging"""
@@ -447,7 +418,8 @@ class SelfAwarePiCrawler:
                     self.check_tactile_obstacles()
                     self.moves_since_tactile_check = 0
                 
-                if distance <= self.obstacle_distance and distance > 0:
+                avoid_threshold = self.safe_distance if self.current_state == RobotState.AVOIDING_OBSTACLE else self.obstacle_distance
+                if distance <= avoid_threshold and distance > 0:
                     if self.smart_obstacle_avoidance(distance):
                         continue
                 
