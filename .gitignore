@@ -13,5 +13,7 @@ dist/
 # specific
 recordings/
 logs/
-__pycache__/
 data/
+
+# intermediate versions
+old/
