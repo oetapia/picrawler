@@ -5,10 +5,10 @@ import os
 import socket
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+import json
 import time
 from datetime import datetime
 from flask import request, jsonify
-import numpy as np
 
 # Check if terminal supports UTF-8 output
 def safe_print(message):
@@ -61,34 +61,18 @@ current_speed = 80
 current_pose = "spread_out"
 robot_status = "ready"
 
-# IMPROVED POSE DEFINITIONS
-# Basic poses
-spread_out = np.array([[45, 45, -45], [45, 45, -45], [45, 45, -45], [45, 45, -45]])
-compact = np.array([[45, 0, 0], [45, 0, 0], [45, 45, 0], [45, 45, 0]])
+_POSES_FILE = os.path.join(os.path.dirname(__file__), '../../components/motion/poses.json')
+with open(_POSES_FILE) as f:
+    poses = json.load(f)
 
-# Wave poses - more distinct differences
-wave_1 = np.array([[45, 45, -45], [-15, 90, 60], [45, 45, -45], [45, 45, -45]])  # Right arm up high
-wave_2 = np.array([[45, 45, -45], [15, 45, 30], [45, 45, -45], [45, 45, -45]])   # Right arm mid position
-
-# Look up/down poses
-smelling_ground = np.array([[30, 30, -30], [30, 30, -30], [60, 45, -75], [60, 45, -75]])  # Front legs down, back legs up
-looking_at_sky = np.array([[60, 45, -75], [60, 45, -75], [30, 30, -30], [30, 30, -30]])   # Front legs up, back legs down
-
-# NEW LEAN POSES - Left and Right
-lean_left = np.array([[60, 45, -75], [30, 30, -30], [60, 45, -75], [30, 30, -30]])   # Left legs up, right legs down
-lean_right = np.array([[30, 30, -30], [60, 45, -75], [30, 30, -30], [60, 45, -75]])  # Right legs up, left legs down
-
-# Store pose mappings
-poses = {
-    "spread_out": spread_out,
-    "compact": compact,
-    "wave_1": wave_1,
-    "wave_2": wave_2,
-    "smelling_ground": smelling_ground,
-    "looking_at_sky": looking_at_sky,
-    "lean_left": lean_left,
-    "lean_right": lean_right
-}
+spread_out      = poses["spread_out"]
+compact         = poses["compact"]
+wave_1          = poses["wave_1"]
+wave_2          = poses["wave_2"]
+smelling_ground = poses["smelling_ground"]
+looking_at_sky  = poses["looking_at_sky"]
+lean_left       = poses["lean_left"]
+lean_right      = poses["lean_right"]
 
 def get_local_ip():
     """Get the local IP address of the Pi"""
@@ -108,8 +92,8 @@ def custom_steps(values, speed=None):
     if speed is None:
         speed = current_speed
     
-    print(f"New step: {values.tolist()}")
-    crawler.do_step(values.tolist(), speed)
+    print(f"New step: {values}")
+    crawler.do_step(values, speed)
     time.sleep(0.1)
 
 def create_response(success=True, message="", data=None):
