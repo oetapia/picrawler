@@ -11,11 +11,11 @@ def check_proximity():
     front = proximity_front.value()
     back = proximity_back.value()
 
-    if front == 1 and back == 1:  # Both sensors detect the floor
+    if front == 0 and back == 0:  # Both sensors detect the floor (active-low)
         return "floor_both"
-    elif front == 0 and back == 0:  # Neither sensor detects floor
+    elif front == 1 and back == 1:  # Neither sensor detects floor
         return "airborne"
-    elif front == 0:  # No floor at front
+    elif front == 1:  # No floor at front
         tts.say("danger front")
         return "danger_front"
     else:  # No floor at back
