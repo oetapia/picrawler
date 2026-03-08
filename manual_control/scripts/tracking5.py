@@ -55,8 +55,11 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')
 
 # Import robot modules
 from picrawler import Picrawler
-from robot_hat import Ultrasonic, TTS
-from robot_hat import Pin
+from robot_hat import TTS, Pin
+try:
+    from robot_hat import Ultrasonic
+except ImportError:
+    Ultrasonic = None
 from components.sensors import ir_distance
 import numpy as np
 
@@ -73,8 +76,14 @@ class SelfAwarePiCrawler:
         """Initialize the self-aware robot"""
         # Hardware initialization
         self.crawler = Picrawler()
-        self.sonar = Ultrasonic(Pin("D2"), Pin("D3"))
         self.tts = TTS()
+        try:
+            self.sonar = Ultrasonic(Pin("D2"), Pin("D3")) if Ultrasonic else None
+            if self.sonar:
+                safe_print("Ultrasonic sensor initialised")
+        except Exception as e:
+            safe_print(f"Ultrasonic not available: {e}")
+            self.sonar = None
         
         # Robot settings
         self.speed = 70
@@ -131,10 +140,12 @@ class SelfAwarePiCrawler:
 
     def get_obstacle_distance(self):
         """Get distance reading from ultrasonic sensor"""
+        if self.sonar is None:
+            return 999
         try:
             distance = self.sonar.read()
             if distance == -2:  # No obstacle detected
-                return 999  # Return high value for no obstacle
+                return 999
             elif distance <= 0:  # Invalid reading
                 return 999
             else:
