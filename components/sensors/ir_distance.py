@@ -10,17 +10,17 @@ tts = TTS()
 def check_proximity():
     front = proximity_front.value()
     back = proximity_back.value()
-    
-    if front == 0 and back == 0:  # Both sensors detect the floor
-        return "floor_both"  # Indicating floor is detected on both sides
-    elif front == 0:
+
+    if front == 1 and back == 1:  # Both sensors detect the floor
+        return "floor_both"
+    elif front == 0 and back == 0:  # Neither sensor detects floor
+        return "airborne"
+    elif front == 0:  # No floor at front
         tts.say("danger front")
-        return "danger_front"  # Floor detected on back but danger in front
-    elif back == 0:
+        return "danger_front"
+    else:  # No floor at back
         tts.say("danger back")
-        return "danger_back"  # Floor detected on front but danger in back
-    else:
-        return "airborne"  # No floor detected
+        return "danger_back"
 
 def main():
     while True:

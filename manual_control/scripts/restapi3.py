@@ -8,7 +8,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')
 import json
 import time
 from datetime import datetime
-from flask import request, jsonify
+from flask import request, jsonify, send_from_directory
 
 # Check if terminal supports UTF-8 output
 def safe_print(message):
@@ -106,6 +106,13 @@ def create_response(success=True, message="", data=None):
     if data:
         response.update(data)
     return jsonify(response)
+
+_CLIENT_DIR = os.path.join(os.path.dirname(__file__), '../client')
+
+@app.route('/')
+def web_ui():
+    """Serve the web UI"""
+    return send_from_directory(_CLIENT_DIR, 'webui.html')
 
 # API Routes
 @app.route('/api/status')
@@ -333,7 +340,8 @@ def main():
     local_ip = get_local_ip()
     port = 5000
     
-    safe_print(f"{ICONS['network']} Starting API server on {local_ip}:{port}")
+    safe_print(f"{ICONS['network']} Starting server on {local_ip}:{port}")
+    safe_print(f"{ICONS['mobile']} Web UI: http://{local_ip}:{port}/")
     safe_print(f"{ICONS['lightning']} API endpoints available:")
     safe_print(f"   - GET  http://{local_ip}:{port}/api/status")
     safe_print(f"   - POST http://{local_ip}:{port}/api/movement/<direction>")
