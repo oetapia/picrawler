@@ -13,9 +13,6 @@ Tests all vilib detection capabilities:
 Usage:
     python components/camera/camera_diagnostic.py [--mode MODE] [--duration SECONDS]
 
-Or from anywhere:
-    python -m components.camera.camera_diagnostic [--mode MODE] [--duration SECONDS]
-
 Modes:
     all      - Test all detection types sequentially (default)
     color    - Test color detection only
@@ -28,8 +25,16 @@ Modes:
 Press Ctrl+C to stop any test early.
 """
 
+import sys
+import os
 import time
-from .vilib_detector import VilibDetector
+
+# Add project root to path for imports
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+from components.camera.vilib_detector import VilibDetector
 
 
 class CameraDiagnostic:
@@ -343,9 +348,6 @@ Examples:
   python components/camera/camera_diagnostic.py --mode object      # Test object detection
   python components/camera/camera_diagnostic.py --mode color -d 15 # Test colors for 15s each
   python components/camera/camera_diagnostic.py --mode face -d 20  # Test face for 20s
-  
-Or from anywhere:
-  python -m components.camera.camera_diagnostic --mode object
         """
     )
     
