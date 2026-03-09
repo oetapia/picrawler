@@ -2,10 +2,10 @@ from robot_hat import Pin, TTS
 import time
 
 # One IR sensor per leg on digital pins D0-D3 (active-low: 0 = floor detected, 1 = no floor)
-front_left  = Pin("D0", Pin.IN)
+front_left  = Pin("D3", Pin.IN)
 front_right = Pin("D1", Pin.IN)
-back_left   = Pin("D2", Pin.IN)
-back_right  = Pin("D3", Pin.IN)
+back_left   = Pin("D0", Pin.IN)
+back_right  = Pin("D2", Pin.IN)
 
 tts = TTS()
 

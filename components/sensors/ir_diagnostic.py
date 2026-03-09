@@ -13,10 +13,10 @@ from robot_hat import Pin
 import time
 
 SENSORS = [
-    ("D0", "front_left"),
+    ("D3", "front_left"),
     ("D1", "front_right"),
-    ("D2", "back_left"),
-    ("D3", "back_right"),
+    ("D0", "back_left"),
+    ("D2", "back_right"),
 ]
 
 pins = {name: Pin(pin_id, Pin.IN) for pin_id, name in SENSORS}
