@@ -1,5 +1,5 @@
 """
-accel_diagnostic.py — live MPU-6050 accelerometer display
+accel_diagnostic.py - live MPU-6050 accelerometer display
 
 Run this to verify the sensor is wired correctly and to observe
 real-time tilt angles and orientation classification.
@@ -67,7 +67,7 @@ def main():
     print("Waking MPU-6050...")
     _wake()
     time.sleep(0.1)
-    print("MPU-6050 Accelerometer Diagnostic — Ctrl+C to exit.\n")
+    print("MPU-6050 Accelerometer Diagnostic - Ctrl+C to exit.\n")
 
     while True:
         try:
@@ -79,8 +79,8 @@ def main():
             print("\033[H\033[J", end="")  # clear screen
             print("MPU-6050 Accelerometer Diagnostic\n")
             print(f"  Accel  (g)   X: {ax:+.3f}   Y: {ay:+.3f}   Z: {az:+.3f}")
-            print(f"  Gyro (°/s)   X: {gx:+.3f}   Y: {gy:+.3f}   Z: {gz:+.3f}")
-            print(f"  Pitch: {pitch:+.1f}°    Roll: {roll:+.1f}°")
+            print(f"  Gyro (deg/s) X: {gx:+.3f}   Y: {gy:+.3f}   Z: {gz:+.3f}")
+            print(f"  Pitch: {pitch:+.1f} deg    Roll: {roll:+.1f} deg")
             print(f"  Orientation: {orientation}")
             print("\nPress Ctrl+C to exit.")
 

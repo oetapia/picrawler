@@ -43,7 +43,7 @@ def diagnose():
         ("D3", "back_right",  back_right),
     ]
 
-    print("IR sensor diagnostic — break a circuit to see which pin triggers.")
+    print("IR sensor diagnostic - break a circuit to see which pin triggers.")
     print("Press Ctrl+C to exit.\n")
 
     prev = {}
@@ -61,7 +61,7 @@ def diagnose():
                     print(f"  restored   {pin} ({name})")
         else:
             if any(prev.get(pin) != 0 for pin, *_ in SENSORS):
-                print("  idle — all sensors detecting floor")
+                print("  idle - all sensors detecting floor")
 
         prev = dict(readings)
         time.sleep(0.05)

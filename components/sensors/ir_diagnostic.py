@@ -1,5 +1,5 @@
 """
-ir_diagnostic.py — live IR sensor pin mapper
+ir_diagnostic.py - live IR sensor pin mapper
 
 Run this to figure out which physical leg is wired to which pin.
 Break a leg's IR circuit (lift the leg) and the pin will show TRIGGERED.
@@ -32,7 +32,7 @@ def print_status(readings):
         state = "TRIGGERED" if readings[name] == 1 else "idle"
         lines.append(f"  {pin_id}  {name:<14}  {state}")
     print("\033[H\033[J", end="")  # clear screen
-    print("IR Pin Diagnostic — lift a leg to see which pin triggers\n")
+    print("IR Pin Diagnostic - lift a leg to see which pin triggers\n")
     print("\n".join(lines))
     print("\nPress Ctrl+C to exit.")
 

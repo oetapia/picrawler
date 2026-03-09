@@ -27,12 +27,12 @@ def _read_raw_block(reg):
     return s16(data[0], data[1]), s16(data[2], data[3]), s16(data[4], data[5])
 
 def read_accel():
-    """Returns (ax, ay, az) in g.  ±2 g full-scale (default)."""
+    """Returns (ax, ay, az) in g.  +/-2 g full-scale (default)."""
     ax, ay, az = _read_raw_block(ACCEL_XOUT_H)
     return ax / 16384.0, ay / 16384.0, az / 16384.0
 
 def read_gyro():
-    """Returns (gx, gy, gz) in deg/s.  ±250 °/s full-scale (default)."""
+    """Returns (gx, gy, gz) in deg/s.  +/-250 deg/s full-scale (default)."""
     gx, gy, gz = _read_raw_block(GYRO_XOUT_H)
     return gx / 131.0, gy / 131.0, gz / 131.0
 
@@ -84,7 +84,7 @@ def main():
         pitch, roll = get_tilt()
         orientation  = get_orientation()
         print(f"Accel(g): X={ax:+.3f} Y={ay:+.3f} Z={az:+.3f} | "
-              f"Pitch={pitch:+.1f}° Roll={roll:+.1f}° | {orientation}")
+              f"Pitch={pitch:+.1f}deg Roll={roll:+.1f}deg | {orientation}")
         time.sleep(1)
 
 if __name__ == "__main__":
