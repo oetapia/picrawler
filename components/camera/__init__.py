@@ -10,7 +10,10 @@ from .vilib_detector import (
     DetectionResult,
     create_color_tracker,
     create_face_tracker,
-    create_qr_reader
+    create_qr_reader,
+    create_object_detector,
+    create_traffic_sign_detector,
+    create_image_classifier
 )
 
 __all__ = [
@@ -19,5 +22,8 @@ __all__ = [
     'DetectionResult',
     'create_color_tracker',
     'create_face_tracker',
-    'create_qr_reader'
+    'create_qr_reader',
+    'create_object_detector',
+    'create_traffic_sign_detector',
+    'create_image_classifier'
 ]

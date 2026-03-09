@@ -97,13 +97,19 @@ class VilibDetector:
         self._color_detection_enabled = False
         self._face_detection_enabled = False
         self._qr_detection_enabled = False
+        self._object_detection_enabled = False
+        self._traffic_sign_detection_enabled = False
+        self._image_classification_enabled = False
         self._current_color = None
         
         # Callback system for real-time notifications
         self._callbacks: Dict[str, List[Callable]] = {
             'color': [],
             'face': [],
-            'qr': []
+            'qr': [],
+            'object': [],
+            'traffic_sign': [],
+            'image_classify': []
         }
         
         # Monitoring thread
@@ -303,6 +309,107 @@ class VilibDetector:
             )
         return DetectionResult(detected=False)
     
+    # ============ Object Detection ============
+    
+    def enable_object_detection(self):
+        """
+        Enable object detection (COCO dataset objects).
+        Detects common objects like person, car, dog, cat, etc.
+        """
+        Vilib.object_detect_switch(True)
+        self._object_detection_enabled = True
+    
+    def disable_object_detection(self):
+        """Disable object detection."""
+        Vilib.object_detect_switch(False)
+        self._object_detection_enabled = False
+    
+    def get_object_detection(self) -> DetectionResult:
+        """
+        Get current object detection result.
+        
+        Returns:
+            DetectionResult with detected object data
+        """
+        params = Vilib.detect_obj_parameter
+        count = params.get('obj_n', 0)
+        
+        if count > 0:
+            return DetectionResult(
+                detected=True,
+                count=count,
+                x=params.get('obj_x', 0),
+                y=params.get('obj_y', 0),
+                width=params.get('obj_w', 0),
+                height=params.get('obj_h', 0),
+                data=params.get('obj_t', 'unknown')  # object type/label
+            )
+        return DetectionResult(detected=False)
+    
+    # ============ Traffic Sign Detection ============
+    
+    def enable_traffic_sign_detection(self):
+        """Enable traffic sign detection."""
+        Vilib.traffic_sign_detect_switch(True)
+        self._traffic_sign_detection_enabled = True
+    
+    def disable_traffic_sign_detection(self):
+        """Disable traffic sign detection."""
+        Vilib.traffic_sign_detect_switch(False)
+        self._traffic_sign_detection_enabled = False
+    
+    def get_traffic_sign_detection(self) -> DetectionResult:
+        """
+        Get current traffic sign detection result.
+        
+        Returns:
+            DetectionResult with traffic sign data
+        """
+        params = Vilib.detect_obj_parameter
+        count = params.get('ts_n', 0)
+        
+        if count > 0:
+            return DetectionResult(
+                detected=True,
+                count=count,
+                x=params.get('ts_x', 0),
+                y=params.get('ts_y', 0),
+                width=params.get('ts_w', 0),
+                height=params.get('ts_h', 0),
+                data=params.get('ts_t', 'unknown')  # sign type
+            )
+        return DetectionResult(detected=False)
+    
+    # ============ Image Classification ============
+    
+    def enable_image_classification(self):
+        """Enable image classification (ImageNet)."""
+        Vilib.image_classify_switch(True)
+        self._image_classification_enabled = True
+    
+    def disable_image_classification(self):
+        """Disable image classification."""
+        Vilib.image_classify_switch(False)
+        self._image_classification_enabled = False
+    
+    def get_image_classification(self) -> DetectionResult:
+        """
+        Get current image classification result.
+        
+        Returns:
+            DetectionResult with classification data in 'data' field
+        """
+        params = Vilib.detect_obj_parameter
+        classification = params.get('classify_t', 'None')
+        
+        if classification and classification != 'None':
+            return DetectionResult(
+                detected=True,
+                count=1,
+                data=classification
+            )
+        return DetectionResult(detected=False)
+    
     # ============ Photo & Video ============
     
     def take_photo(self, name: str, path: str = "./") -> bool:
@@ -389,6 +496,7 @@ class VilibDetector:
     def _monitor_loop(self, interval: float):
         """Internal monitoring loop."""
         last_qr_data = None
+        last_classify_data = None
         
         while self._monitor_running:
             try:
@@ -414,6 +522,28 @@ class VilibDetector:
                         for callback in self._callbacks['qr']:
                             callback(result)
                 
+                # Check object detection
+                if self._object_detection_enabled and self._callbacks['object']:
+                    result = self.get_object_detection()
+                    if result.detected:
+                        for callback in self._callbacks['object']:
+                            callback(result)
+                
+                # Check traffic sign detection
+                if self._traffic_sign_detection_enabled and self._callbacks['traffic_sign']:
+                    result = self.get_traffic_sign_detection()
+                    if result.detected:
+                        for callback in self._callbacks['traffic_sign']:
+                            callback(result)
+                
+                # Check image classification (only trigger on new data)
+                if self._image_classification_enabled and self._callbacks['image_classify']:
+                    result = self.get_image_classification()
+                    if result.detected and result.data != last_classify_data:
+                        last_classify_data = result.data
+                        for callback in self._callbacks['image_classify']:
+                            callback(result)
+                
                 time.sleep(interval)
             except Exception as e:
                 print(f"Error in monitoring loop: {e}")
@@ -426,6 +556,12 @@ class VilibDetector:
         self.disable_color_detection()
         self.disable_face_detection()
         self.disable_qr_detection()
+        if self._object_detection_enabled:
+            self.disable_object_detection()
+        if self._traffic_sign_detection_enabled:
+            self.disable_traffic_sign_detection()
+        if self._image_classification_enabled:
+            self.disable_image_classification()
     
     def get_detection_status(self) -> Dict[str, bool]:
         """
@@ -440,6 +576,9 @@ class VilibDetector:
             'color': self._color_detection_enabled,
             'face': self._face_detection_enabled,
             'qr': self._qr_detection_enabled,
+            'object': self._object_detection_enabled,
+            'traffic_sign': self._traffic_sign_detection_enabled,
+            'image_classify': self._image_classification_enabled,
             'monitoring': self._monitor_running,
             'current_color': self._current_color
         }
@@ -515,4 +654,58 @@ def create_qr_reader(vflip: bool = False, hflip: bool = False) -> VilibDetector:
     detector.start_camera()
     detector.start_display(web=True)
     detector.enable_qr_detection()
+    return detector
+
+
+def create_object_detector(vflip: bool = False, hflip: bool = False) -> VilibDetector:
+    """
+    Create a detector configured for object detection (default).
+    
+    Args:
+        vflip: Vertical flip
+        hflip: Horizontal flip
+    
+    Returns:
+        Configured VilibDetector instance
+    """
+    detector = VilibDetector(vflip=vflip, hflip=hflip)
+    detector.start_camera()
+    detector.start_display(web=True)
+    detector.enable_object_detection()
+    return detector
+
+
+def create_traffic_sign_detector(vflip: bool = False, hflip: bool = False) -> VilibDetector:
+    """
+    Create a detector configured for traffic sign detection.
+    
+    Args:
+        vflip: Vertical flip
+        hflip: Horizontal flip
+    
+    Returns:
+        Configured VilibDetector instance
+    """
+    detector = VilibDetector(vflip=vflip, hflip=hflip)
+    detector.start_camera()
+    detector.start_display(web=True)
+    detector.enable_traffic_sign_detection()
+    return detector
+
+
+def create_image_classifier(vflip: bool = False, hflip: bool = False) -> VilibDetector:
+    """
+    Create a detector configured for image classification.
+    
+    Args:
+        vflip: Vertical flip
+        hflip: Horizontal flip
+    
+    Returns:
+        Configured VilibDetector instance
+    """
+    detector = VilibDetector(vflip=vflip, hflip=hflip)
+    detector.start_camera()
+    detector.start_display(web=True)
+    detector.enable_image_classification()
     return detector
