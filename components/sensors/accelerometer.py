@@ -1,132 +1,91 @@
-import os
 import smbus
+import math
 import time
-import logging
 
-# Initialize I2C
-bus = smbus.SMBus(1)  # Use 1 for Raspberry Pi
-
-# Multiplexer I2C address
-multiplexer_address = 0x70
 MPU6050_ADDR = 0x68
-PWR_MGMT_1 = 0x6B
+PWR_MGMT_1   = 0x6B
 ACCEL_XOUT_H = 0x3B
+GYRO_XOUT_H  = 0x43
 
+_bus = None
 
-# Create 'data' directory if it doesn't exist
-data_dir = os.path.join(os.path.dirname(__file__), '../data')
-os.makedirs(data_dir, exist_ok=True)
+def _get_bus():
+    global _bus
+    if _bus is None:
+        _bus = smbus.SMBus(1)
+    return _bus
 
-# Set up logging
-logging.basicConfig(filename=os.path.join(data_dir, 'accelerometer_log.txt'), level=logging.INFO, 
-                    format='%(asctime)s - %(message)s')
+def wake():
+    """Wake the MPU-6050 from sleep mode."""
+    _get_bus().write_byte_data(MPU6050_ADDR, PWR_MGMT_1, 0x00)
 
-# Function to select a channel on the multiplexer
-def select_channel(channel):
-    if 0 <= channel <= 7:
-        bus.write_byte(multiplexer_address, 1 << channel)
-    else:
-        print("Channel out of range!")
+def _read_raw_block(reg):
+    data = _get_bus().read_i2c_block_data(MPU6050_ADDR, reg, 6)
+    def s16(hi, lo):
+        v = (hi << 8) | lo
+        return v - 65536 if v > 32767 else v
+    return s16(data[0], data[1]), s16(data[2], data[3]), s16(data[4], data[5])
 
-# Wake up the MPU-6050
-def wake_mpu6050():
-    bus.write_byte_data(MPU6050_ADDR, PWR_MGMT_1, 0)
+def read_accel():
+    """Returns (ax, ay, az) in g.  ±2 g full-scale (default)."""
+    ax, ay, az = _read_raw_block(ACCEL_XOUT_H)
+    return ax / 16384.0, ay / 16384.0, az / 16384.0
 
-def read_word(register):
-    high = bus.read_byte_data(MPU6050_ADDR, register)
-    low = bus.read_byte_data(MPU6050_ADDR, register + 1)
-    return (high << 8) + low
+def read_gyro():
+    """Returns (gx, gy, gz) in deg/s.  ±250 °/s full-scale (default)."""
+    gx, gy, gz = _read_raw_block(GYRO_XOUT_H)
+    return gx / 131.0, gy / 131.0, gz / 131.0
 
-def read_accel_data():
-    ax = read_word(ACCEL_XOUT_H)
-    ay = read_word(ACCEL_XOUT_H + 2)
-    az = read_word(ACCEL_XOUT_H + 4)
-    return ax, ay, az
+def get_tilt():
+    """Returns (pitch, roll) in degrees derived from accelerometer."""
+    ax, ay, az = read_accel()
+    pitch = math.degrees(math.atan2(ax, math.sqrt(ay ** 2 + az ** 2)))
+    roll  = math.degrees(math.atan2(ay, math.sqrt(ax ** 2 + az ** 2)))
+    return pitch, roll
 
-def convert_to_g(raw_value):
-    """Convert raw accelerometer data to 'g' forces."""
-    # Handle two's complement for negative numbers
-    raw_value = twos_complement(raw_value)
-    return raw_value / 16384.0  # Convert to 'g' assuming ±2g setting
+def get_orientation(tilt_threshold=15.0):
+    """
+    Classify robot posture from tilt angles.
 
-def normalize_accel(ax, ay, az):
-    """Normalize and adjust for gravity on Z-axis."""
-    ax_g = convert_to_g(ax)
-    ay_g = convert_to_g(ay)
-    az_g = convert_to_g(az) - 1.0  # Adjust for gravity
-    return ax_g, ay_g, az_g
+    Returns one of: "level", "tilted_forward", "tilted_back",
+    "tilted_right", "tilted_left", or a combined string like
+    "tilted_forward+tilted_right".
 
-def classify_orientation(ax_g, ay_g, az_g, position):
-    """Classify orientation based on threshold values for each accelerometer."""
-    thresholds = {
-        "Front Left": {"ax": 0.3, "ay": 0.3, "az": 0.5},  # Adjusted thresholds
-        "Back Right": {"ax": 0.3, "ay": 0.4, "az": 0.3},  # Adjust as necessary
-        "Inside": {"ax": 0.2, "ay": 0.2, "az": 0.2}
-    }
+    tilt_threshold: degrees from level that counts as tilted (default 15).
+    """
+    pitch, roll = get_tilt()
 
+    if abs(pitch) < tilt_threshold and abs(roll) < tilt_threshold:
+        return "level"
 
-    baseline = {
-        "Front Left": (16484, 1720, 63764),
-        "Back Right": (17144, 64176, 628),
-        "Inside": (64876, 616, 16612)
-    }
+    states = []
+    if pitch > tilt_threshold:
+        states.append("tilted_forward")
+    elif pitch < -tilt_threshold:
+        states.append("tilted_back")
+    if roll > tilt_threshold:
+        states.append("tilted_right")
+    elif roll < -tilt_threshold:
+        states.append("tilted_left")
 
-    # Calculate deviations from baseline
-    ax_dev = ax_g - (baseline[position][0] / 16384.0)
-    ay_dev = ay_g - (baseline[position][1] / 16384.0)
-    az_dev = az_g - (baseline[position][2] / 16384.0)
+    return "+".join(states)
 
-    print(f"Deviations -> AX: {ax_dev}, AY: {ay_dev}, AZ: {az_dev}")
-
-    if abs(ax_dev) < thresholds[position]["ax"] and abs(ay_dev) < thresholds[position]["ay"] and abs(az_dev) < thresholds[position]["az"]:
-        return f"{position} - At Rest"
-
-    orientation = []
-
-    # Leaning detection
-    if ax_dev < -thresholds[position]["ax"]:  # Leaning Forward
-        orientation.append("Leaning Forward")
-    elif ax_dev > thresholds[position]["ax"]:  # Leaning Backward
-        orientation.append("Leaning Backward")
-
-    if ay_dev > thresholds[position]["ay"]:  # Leaning Right
-        orientation.append("Leaning Right")
-    elif ay_dev < -thresholds[position]["ay"]:  # Leaning Left
-        orientation.append("Leaning Left")
-
-    # If orientation detected, return that; otherwise return "Unknown"
-    return f"{position} - " + " and ".join(orientation) if orientation else f"{position} - Unknown"
-
-
-
-def twos_complement(val, bits=16):
-    """Convert raw value to two's complement for the given bit length."""
-    if val >= 2**(bits - 1):
-        val -= 2**bits
-    return val
+def is_stable(threshold=10.0):
+    """Returns True when the robot is roughly level (within *threshold* degrees)."""
+    pitch, roll = get_tilt()
+    return abs(pitch) < threshold and abs(roll) < threshold
 
 
 def main():
-    for channel in range(1):  # Assuming you have three sensors on channels 0, 1, and 2
-        select_channel(channel)  # Select the channel for the accelerometer
-        wake_mpu6050()          # Wake up the MPU-6050
-        ax, ay, az = read_accel_data()
-        print(f"Channel {channel} -> AX: {ax}, AY: {ay}, AZ: {az}")
-        ax_g, ay_g, az_g = normalize_accel(ax, ay, az)
-        # Classify orientation based on channel
-        if channel == 0:
-            orientation = classify_orientation(ax_g, ay_g, az_g, "Inside")  # Front Left Accelerometer
-        elif channel == 1:
-            orientation = classify_orientation(ax_g, ay_g, az_g, "Back Right")  # Back Right Accelerometer
-        else:
-            orientation = classify_orientation(ax_g, ay_g, az_g, "Front Left")  # Front Right Accelerometer
-    
-        
-        #orientation = classify_orientation(ax_g, ay_g, az_g)
-        print(f"Orientation: {orientation}")
-        #logging.info(f"Channel {channel} -> AX: {ax}, AY: {ay}, AZ: {az}")  # Log the data
-        time.sleep(1)  # Adjust the sleep time as needed
+    wake()
+    time.sleep(0.1)
+    while True:
+        ax, ay, az = read_accel()
+        pitch, roll = get_tilt()
+        orientation  = get_orientation()
+        print(f"Accel(g): X={ax:+.3f} Y={ay:+.3f} Z={az:+.3f} | "
+              f"Pitch={pitch:+.1f}° Roll={roll:+.1f}° | {orientation}")
+        time.sleep(1)
 
 if __name__ == "__main__":
-    while True:
-        main()  # Call the main function if this script is run directly
+    main()
