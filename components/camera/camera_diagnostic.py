@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Vilib Detection Diagnostic Tool
+Camera Detection Diagnostic Tool
 
 Tests all vilib detection capabilities:
 - Color detection (red, orange, yellow, green, blue, purple)
@@ -11,7 +11,10 @@ Tests all vilib detection capabilities:
 - Image classification (ImageNet)
 
 Usage:
-    python examples/vilib_diagnostic.py [--mode MODE] [--duration SECONDS]
+    python components/camera/camera_diagnostic.py [--mode MODE] [--duration SECONDS]
+
+Or from anywhere:
+    python -m components.camera.camera_diagnostic [--mode MODE] [--duration SECONDS]
 
 Modes:
     all      - Test all detection types sequentially (default)
@@ -25,13 +28,12 @@ Modes:
 Press Ctrl+C to stop any test early.
 """
 
-from components.camera import VilibDetector
 import time
-import sys
+from .vilib_detector import VilibDetector
 
 
-class VilibDiagnostic:
-    """Diagnostic tool for vilib detection capabilities"""
+class CameraDiagnostic:
+    """Diagnostic tool for camera detection capabilities"""
     
     def __init__(self):
         self.detector = VilibDetector()
@@ -263,7 +265,7 @@ class VilibDiagnostic:
     def run_all_tests(self, color_duration: int = 5, other_duration: int = 10):
         """Run all diagnostic tests"""
         print("\n" + "="*60)
-        print("  VILIB DETECTION DIAGNOSTIC TOOL")
+        print("  CAMERA DETECTION DIAGNOSTIC TOOL")
         print("="*60)
         print("\nThis will test all vilib detection capabilities.")
         print("View camera stream at: http://localhost:9000/mjpg")
@@ -295,7 +297,7 @@ class VilibDiagnostic:
     def run_single_test(self, mode: str, duration: int = 10):
         """Run a single diagnostic test"""
         print("\n" + "="*60)
-        print(f"  VILIB {mode.upper()} DETECTION TEST")
+        print(f"  CAMERA {mode.upper()} DETECTION TEST")
         print("="*60)
         print(f"\nView camera stream at: http://localhost:9000/mjpg")
         print(f"Test duration: {duration} seconds")
@@ -333,14 +335,17 @@ def main():
     import argparse
     
     parser = argparse.ArgumentParser(
-        description='Vilib Detection Diagnostic Tool',
+        description='Camera Detection Diagnostic Tool',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python examples/vilib_diagnostic.py                    # Run all tests
-  python examples/vilib_diagnostic.py --mode object      # Test object detection
-  python examples/vilib_diagnostic.py --mode color -d 15 # Test colors for 15s each
-  python examples/vilib_diagnostic.py --mode face -d 20  # Test face for 20s
+  python components/camera/camera_diagnostic.py                    # Run all tests
+  python components/camera/camera_diagnostic.py --mode object      # Test object detection
+  python components/camera/camera_diagnostic.py --mode color -d 15 # Test colors for 15s each
+  python components/camera/camera_diagnostic.py --mode face -d 20  # Test face for 20s
+  
+Or from anywhere:
+  python -m components.camera.camera_diagnostic --mode object
         """
     )
     
@@ -360,7 +365,7 @@ Examples:
     args = parser.parse_args()
     
     # Create diagnostic tool
-    diagnostic = VilibDiagnostic()
+    diagnostic = CameraDiagnostic()
     
     # Run tests
     if args.mode == 'all':
