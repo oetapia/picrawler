@@ -34,6 +34,16 @@ def check_proximity():
 
     return dangers if dangers else {"floor_all"}
 
+def read_legs():
+    """Return individual sensor states as a dict.
+    Keys: 'fl', 'fr', 'bl', 'br'.  0 = floor detected, 1 = no floor (danger/lifted)."""
+    return {
+        'fl': front_left.value(),
+        'fr': front_right.value(),
+        'bl': back_left.value(),
+        'br': back_right.value(),
+    }
+
 def diagnose():
     """Interactive diagnostic: shows idle state and highlights any pin that breaks the circuit."""
     SENSORS = [
