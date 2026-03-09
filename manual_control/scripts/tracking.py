@@ -23,7 +23,7 @@ import math
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 from picrawler import Picrawler
-from robot_hat import TTS, Pin
+from robot_hat import TTS, Pin, utils
 from components.sensors.distance_sensor import create_distance_sensor
 from components.sensors import ir_distance, accelerometer
 
@@ -197,6 +197,11 @@ class EnhancedPiCrawler:
     
     def __init__(self, distance_sensor_type=DISTANCE_SENSOR_TYPE):
         safe_print(f"\n{ICONS['robot']} Initializing Enhanced PiCrawler...")
+        
+        # Reset MCU/GPIO to ensure clean state (important for reliable sensor readings)
+        safe_print("Resetting MCU...")
+        utils.reset_mcu()
+        time.sleep(0.2)
         
         # Core components
         self.crawler = Picrawler()
