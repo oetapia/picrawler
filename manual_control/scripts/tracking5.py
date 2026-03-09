@@ -99,6 +99,44 @@ PROBE = {
 PROBE_SETTLE = 0.12   # seconds to wait after moving leg before reading sensor
 PROBE_SPEED  = 90     # servo speed for probe moves (fast but not jerky)
 
+# ---------------------------------------------------------------------------
+# Balance compensation leg pose reference points  [x, y, z]
+# Leg order: [FL, FR, BL, BR]
+#   EXTENDED  – leg pushed fully down → lifts that body corner
+#   RETRACTED – leg pulled up        → drops that body corner
+#   NEUTRAL   – midpoint standing pose
+# Sign matrix (positive = extend leg to compensate):
+#   pitch > 0 (nose down): extend front legs  [+1, +1, -1, -1]
+#   roll  > 0 (tilt right): extend left legs  [+1, -1, +1, -1]
+# ---------------------------------------------------------------------------
+BAL_EXTENDED  = [60, 45, -75]
+BAL_RETRACTED = [30, 30, -30]
+BAL_NEUTRAL   = [45, 37, -52]
+BAL_COMPACT   = [[45, 0, 0], [45, 0, 0], [45, 45, 0], [45, 45, 0]]
+BAL_PITCH_SIGN = [+1, +1, -1, -1]
+BAL_ROLL_SIGN  = [+1, -1, +1, -1]
+BAL_MAX_TILT   = 25.0   # degrees → full extension/retraction
+BAL_DEAD_ZONE  = 3.0    # degrees → no correction below this
+BAL_SPEED      = 60     # servo speed for balance adjustments
+
+
+def _bal_lerp(a, b, t):
+    return [a[j] + t * (b[j] - a[j]) for j in range(3)]
+
+
+def compute_balance_pose(pitch, roll):
+    """Return a 4-leg [[x,y,z],...] pose that compensates pitch/roll."""
+    pf = max(-1.0, min(1.0, pitch / BAL_MAX_TILT))
+    rf = max(-1.0, min(1.0, roll  / BAL_MAX_TILT))
+    pose = []
+    for i in range(4):
+        f = max(-1.0, min(1.0, BAL_PITCH_SIGN[i] * pf + BAL_ROLL_SIGN[i] * rf))
+        if f >= 0.0:
+            pose.append(_bal_lerp(BAL_NEUTRAL, BAL_EXTENDED, f))
+        else:
+            pose.append(_bal_lerp(BAL_RETRACTED, BAL_NEUTRAL, f + 1.0))
+    return pose
+
 
 class RobotState(Enum):
     EXPLORING             = "exploring"
@@ -237,6 +275,24 @@ class SelfAwarePiCrawler:
         if roll < -3:
             return 'turn right'
         return None
+
+    def apply_balance(self):
+        """
+        Flex legs to keep the body level based on current pitch/roll.
+        Called between gait steps so it doesn't fight the walking motion.
+        """
+        if not self.accel_available:
+            return
+        try:
+            pitch, roll = accelerometer.get_tilt()
+            if abs(pitch) < BAL_DEAD_ZONE and abs(roll) < BAL_DEAD_ZONE:
+                pose = [list(BAL_NEUTRAL)] * 4
+            else:
+                pose = compute_balance_pose(pitch, roll)
+                safe_print(f"{ICONS['tilt']} Balance: pitch={pitch:+.1f} roll={roll:+.1f}")
+            self.crawler.do_step(pose, BAL_SPEED)
+        except Exception as e:
+            safe_print(f"Balance error: {e}")
 
     def check_and_apply_tilt(self):
         """Adjust speed and state from MPU-6050 pitch/roll."""
@@ -702,6 +758,9 @@ class SelfAwarePiCrawler:
                         "Navigation systems nominal",
                     ]))
 
+                # Flex legs to stay level between gait steps
+                self.apply_balance()
+
                 time.sleep(0.1)
 
             except KeyboardInterrupt:
@@ -725,6 +784,7 @@ class SelfAwarePiCrawler:
         safe_print(f"   Total runtime:     {uptime:.1f} seconds")
         safe_print(f"   Distance traveled: ~{self.total_distance_traveled} steps")
         safe_print(f"   Final state:       {self.current_state.value}")
+        self.crawler.do_step(BAL_COMPACT, 40)
 
 
 def main():

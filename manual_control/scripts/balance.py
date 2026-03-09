@@ -156,8 +156,8 @@ def main():
     except KeyboardInterrupt:
         print("\nStopped.")
     finally:
-        print("Returning to neutral...")
-        crawler.do_step([list(NEUTRAL)] * 4, 40)
+        print("Returning to compact pose...")
+        crawler.do_step(RESET_POSE, 40)
 
 
 if __name__ == '__main__':
