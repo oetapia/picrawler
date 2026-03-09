@@ -34,6 +34,39 @@ def check_proximity():
 
     return dangers if dangers else {"floor_all"}
 
+def diagnose():
+    """Interactive diagnostic: shows idle state and highlights any pin that breaks the circuit."""
+    SENSORS = [
+        ("D0", "front_left",  front_left),
+        ("D1", "front_right", front_right),
+        ("D2", "back_left",   back_left),
+        ("D3", "back_right",  back_right),
+    ]
+
+    print("IR sensor diagnostic — break a circuit to see which pin triggers.")
+    print("Press Ctrl+C to exit.\n")
+
+    prev = {}
+
+    while True:
+        readings = {pin: sensor.value() for pin, _, sensor in SENSORS}
+        triggered = [(pin, name) for pin, name, _ in SENSORS if readings[pin] == 1]
+
+        if triggered:
+            for pin, name in triggered:
+                if prev.get(pin) != 1:
+                    print(f"  TRIGGERED  {pin} ({name})")
+            for pin, name in [(p, n) for p, n, _ in SENSORS if readings[p] == 0]:
+                if prev.get(pin) != 0:
+                    print(f"  restored   {pin} ({name})")
+        else:
+            if any(prev.get(pin) != 0 for pin, *_ in SENSORS):
+                print("  idle — all sensors detecting floor")
+
+        prev = dict(readings)
+        time.sleep(0.05)
+
+
 def main():
     while True:
         proximity_status = check_proximity()
@@ -41,7 +74,11 @@ def main():
         time.sleep(1)
 
 if __name__ == "__main__":
+    import sys
     try:
-        main()
+        if "--diagnose" in sys.argv:
+            diagnose()
+        else:
+            main()
     except KeyboardInterrupt:
         print("\nProgram stopped.")
