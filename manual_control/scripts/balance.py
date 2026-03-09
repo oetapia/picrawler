@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Balance compensation for PiCrawler.
+Active balance compensation for PiCrawler using MPU-6050.
 
-Reads pitch and roll from the MPU-6050 accelerometer and makes small
-corrective leg movements to keep the robot body level:
+Instead of walking, the robot flexes each leg independently to keep
+the body level.  Each leg is blended between a retracted (high corner)
+and extended (low corner) position proportional to measured pitch/roll.
 
-  Pitch > 0  (nose tilts down / forward)  →  step backward
-  Pitch < 0  (nose tilts up  / backward)  →  step forward
-  Roll  > 0  (tilts right)                →  turn left
-  Roll  < 0  (tilts left)                 →  turn right
+Leg order: [FL, FR, BL, BR]  (0-front-left, 1-front-right,
+                                2-back-left,  3-back-right)
 
-Corrections are proportional: larger tilt = more steps per cycle.
-The loop runs at ~10 Hz; when level, the robot stands still.
+Compensation sign matrix (positive = extend leg to lift that body corner):
+          pitch > 0 (nose down)  →  extend front legs, retract back
+          roll  > 0 (tilt right) →  extend left  legs, retract right
+          [FL, FR, BL, BR]
+PITCH:    [+1, +1, -1, -1]
+ROLL:     [+1, -1, +1, -1]
 """
 
 import os
@@ -25,88 +28,99 @@ from picrawler import Picrawler
 from components.sensors import accelerometer
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Tuning parameters
+# Leg pose reference points  [x, y, z]
 # ──────────────────────────────────────────────────────────────────────────────
 
-# Tilt (degrees) below which no correction is applied — prevents jitter
-DEAD_ZONE = 5.0
+# Fully extended downward: pushes that body corner UP
+EXTENDED  = [60, 45, -75]
 
-# Tilt bands → number of corrective steps taken per loop iteration
-#   (tilt_min, tilt_max) → steps
-CORRECTION_BANDS = [
-    (5.0,  12.0, 1),   # gentle tilt  → 1 step
-    (12.0, 22.0, 2),   # moderate     → 2 steps
-    (22.0, 999,  3),   # steep        → 3 steps
-]
+# Fully retracted upward: lets that body corner DOWN
+RETRACTED = [30, 30, -30]
 
-# Servo speed for corrective moves (lower = smoother, higher = snappier)
-CORRECTION_SPEED = 55
+# Midpoint neutral standing pose (used when level)
+NEUTRAL   = [45, 37, -52]
 
-# Seconds to pause after a correction to let the robot settle before
-# re-reading the accelerometer
-SETTLE_DELAY = 0.25
-
-# Main loop period (seconds) when no correction was needed
-IDLE_DELAY = 0.10
+# Known-good starting pose (robot tucked, compact)
+RESET_POSE = [[45, 0, 0], [45, 0, 0], [45, 45, 0], [45, 45, 0]]
 
 # ──────────────────────────────────────────────────────────────────────────────
+# Tuning
+# ──────────────────────────────────────────────────────────────────────────────
 
-def _steps_for_tilt(tilt_deg: float) -> int:
-    """Return the number of corrective steps for a given tilt magnitude."""
-    mag = abs(tilt_deg)
-    for lo, hi, steps in CORRECTION_BANDS:
-        if lo <= mag < hi:
-            return steps
-    return 0  # below dead-zone
+# Tilt angle (degrees) mapped to full extension/retraction
+MAX_TILT  = 25.0
 
+# Below this tilt, return to neutral (prevents jitter on flat surfaces)
+DEAD_ZONE = 3.0
 
-def _pitch_action(pitch: float):
-    """Return the do_action name that counters the given pitch, or None."""
-    if pitch > DEAD_ZONE:
-        return 'backward'   # nose tilted down → step back to shift weight
-    if pitch < -DEAD_ZONE:
-        return 'forward'    # nose tilted up   → step forward
-    return None
+# Servo speed for balance corrections (lower = smoother)
+SPEED = 60
 
+# Loop period (seconds)
+LOOP_HZ = 0.08   # ~12 Hz
 
-def _roll_action(roll: float):
-    """Return the do_action name that counters the given roll, or None."""
-    if roll > DEAD_ZONE:
-        return 'turn left'   # tilted right → turn left
-    if roll < -DEAD_ZONE:
-        return 'turn right'  # tilted left  → turn right
-    return None
+# ──────────────────────────────────────────────────────────────────────────────
+# Per-leg signs  [FL, FR, BL, BR]
+# ──────────────────────────────────────────────────────────────────────────────
+PITCH_SIGN = [+1, +1, -1, -1]
+ROLL_SIGN  = [+1, -1, +1, -1]
 
 
-def run_balance_loop(crawler: Picrawler) -> None:
-    print("Balance loop running. Press Ctrl+C to stop.\n")
+def lerp(a, b, t):
+    """Linear interpolate between two 3-element coordinate lists."""
+    return [a[j] + t * (b[j] - a[j]) for j in range(3)]
+
+
+def compute_pose(pitch, roll):
+    """
+    Return a 4-leg pose [[x,y,z], ...] that compensates for the given
+    pitch and roll angles.
+
+    factor per leg ranges from -1.0 (fully retracted) to +1.0 (fully extended):
+      0.0  →  NEUTRAL
+     +1.0  →  EXTENDED
+     -1.0  →  RETRACTED
+    """
+    pitch_factor = max(-1.0, min(1.0, pitch / MAX_TILT))
+    roll_factor  = max(-1.0, min(1.0, roll  / MAX_TILT))
+
+    pose = []
+    for i in range(4):
+        factor = PITCH_SIGN[i] * pitch_factor + ROLL_SIGN[i] * roll_factor
+        factor = max(-1.0, min(1.0, factor))
+
+        if factor >= 0.0:
+            leg = lerp(NEUTRAL, EXTENDED, factor)
+        else:
+            leg = lerp(RETRACTED, NEUTRAL, factor + 1.0)
+
+        pose.append(leg)
+
+    return pose
+
+
+def run_balance_loop(crawler):
+    print("Balance loop running. Press Ctrl+C to stop.")
+    print("pitch=0.0deg  roll=0.0deg", end='\r', flush=True)
 
     while True:
         try:
             pitch, roll = accelerometer.get_tilt()
 
-            pitch_action = _pitch_action(pitch)
-            roll_action  = _roll_action(roll)
-
-            corrected = False
-
-            # Prioritise whichever axis is more tilted
-            if abs(pitch) >= abs(roll) and pitch_action:
-                steps = _steps_for_tilt(pitch)
-                print("[pitch %+.1fdeg] -> %s x%d" % (pitch, pitch_action, steps))
-                crawler.do_action(pitch_action, steps, CORRECTION_SPEED)
-                corrected = True
-
-            elif roll_action:
-                steps = _steps_for_tilt(roll)
-                print("[roll  %+.1fdeg] -> %s x%d" % (roll, roll_action, steps))
-                crawler.do_action(roll_action, steps, CORRECTION_SPEED)
-                corrected = True
-
+            # If essentially level, hold neutral standing pose
+            if abs(pitch) < DEAD_ZONE and abs(roll) < DEAD_ZONE:
+                pose = [list(NEUTRAL)] * 4
+                print("[level  pitch=%+.1fdeg  roll=%+.1fdeg]" % (pitch, roll),
+                      end='\r', flush=True)
             else:
-                print("[level  pitch=%+.1fdeg  roll=%+.1fdeg]" % (pitch, roll), end='\r', flush=True)
+                pose = compute_pose(pitch, roll)
+                print("[pitch=%+.1fdeg  roll=%+.1fdeg]  legs=%s" % (
+                    pitch, roll,
+                    " ".join("[%.0f,%.0f,%.0f]" % tuple(l) for l in pose)
+                ))
 
-            time.sleep(SETTLE_DELAY if corrected else IDLE_DELAY)
+            crawler.do_step(pose, SPEED)
+            time.sleep(LOOP_HZ)
 
         except KeyboardInterrupt:
             raise
@@ -123,21 +137,27 @@ def main():
     try:
         accelerometer.wake()
         time.sleep(0.1)
-        print("MPU-6050 accelerometer ready.")
+        print("MPU-6050 ready.")
     except Exception as e:
-        print(f"ERROR: Cannot initialise accelerometer: {e}")
+        print("ERROR: Cannot initialise accelerometer: %s" % e)
         sys.exit(1)
 
-    # Start from a known standing position
-    crawler.do_action('stand', 1, CORRECTION_SPEED)
-    time.sleep(0.5)
+    # Move to known reset pose, then transition to neutral standing
+    print("Resetting to known pose...")
+    crawler.do_step(RESET_POSE, 40)
+    time.sleep(1.0)
+
+    print("Moving to neutral standing pose...")
+    crawler.do_step([list(NEUTRAL)] * 4, 40)
+    time.sleep(1.0)
 
     try:
         run_balance_loop(crawler)
     except KeyboardInterrupt:
-        print("\nStopped by user.")
+        print("\nStopped.")
     finally:
-        crawler.do_action('stand', 1, CORRECTION_SPEED)
+        print("Returning to neutral...")
+        crawler.do_step([list(NEUTRAL)] * 4, 40)
 
 
 if __name__ == '__main__':

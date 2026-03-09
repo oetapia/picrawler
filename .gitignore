@@ -6,6 +6,9 @@ myenv/
 # Build directories
 build/
 dist/
+__pycache__/
+*.pyc
+*.pyo
 
 # environmental vars
 .env
