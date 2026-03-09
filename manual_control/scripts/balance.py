@@ -82,30 +82,37 @@ def run_balance_loop(crawler: Picrawler) -> None:
     print("Balance loop running. Press Ctrl+C to stop.\n")
 
     while True:
-        pitch, roll = accelerometer.get_tilt()
+        try:
+            pitch, roll = accelerometer.get_tilt()
 
-        pitch_action = _pitch_action(pitch)
-        roll_action  = _roll_action(roll)
+            pitch_action = _pitch_action(pitch)
+            roll_action  = _roll_action(roll)
 
-        corrected = False
+            corrected = False
 
-        # Prioritise whichever axis is more tilted
-        if abs(pitch) >= abs(roll) and pitch_action:
-            steps = _steps_for_tilt(pitch)
-            print(f"[pitch {pitch:+.1f}°] → {pitch_action} x{steps}")
-            crawler.do_action(pitch_action, steps, CORRECTION_SPEED)
-            corrected = True
+            # Prioritise whichever axis is more tilted
+            if abs(pitch) >= abs(roll) and pitch_action:
+                steps = _steps_for_tilt(pitch)
+                print("[pitch %+.1fdeg] -> %s x%d" % (pitch, pitch_action, steps))
+                crawler.do_action(pitch_action, steps, CORRECTION_SPEED)
+                corrected = True
 
-        elif roll_action:
-            steps = _steps_for_tilt(roll)
-            print(f"[roll  {roll:+.1f}°] → {roll_action} x{steps}")
-            crawler.do_action(roll_action, steps, CORRECTION_SPEED)
-            corrected = True
+            elif roll_action:
+                steps = _steps_for_tilt(roll)
+                print("[roll  %+.1fdeg] -> %s x%d" % (roll, roll_action, steps))
+                crawler.do_action(roll_action, steps, CORRECTION_SPEED)
+                corrected = True
 
-        else:
-            print(f"[level  pitch={pitch:+.1f}° roll={roll:+.1f}°]", end='\r')
+            else:
+                print("[level  pitch=%+.1fdeg  roll=%+.1fdeg]" % (pitch, roll), end='\r', flush=True)
 
-        time.sleep(SETTLE_DELAY if corrected else IDLE_DELAY)
+            time.sleep(SETTLE_DELAY if corrected else IDLE_DELAY)
+
+        except KeyboardInterrupt:
+            raise
+        except Exception as e:
+            print("\n[ERROR] %s" % e)
+            time.sleep(0.5)
 
 
 def main():
