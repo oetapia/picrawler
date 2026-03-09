@@ -207,6 +207,13 @@ def create_distance_sensor(sensor_type="HC-SR04", **kwargs):
         if not trigger_pin or not echo_pin:
             print("Error: HC-SR04 requires trigger_pin and echo_pin")
             return None
+        
+        # Convert string pin names to Pin objects if needed
+        if isinstance(trigger_pin, str):
+            trigger_pin = Pin(trigger_pin)
+        if isinstance(echo_pin, str):
+            echo_pin = Pin(echo_pin)
+        
         return UltrasonicSensor(trigger_pin, echo_pin)
     
     elif sensor_type == "VL53L0X":
