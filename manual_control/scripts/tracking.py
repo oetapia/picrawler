@@ -245,6 +245,10 @@ class EnhancedPiCrawler:
         self.consecutive_floor_dangers = 0
         self.stuck_counter = 0
         
+        # Floor sensor debouncing - track history to avoid false positives
+        self.floor_danger_history = deque(maxlen=3)  # Last 3 readings
+        self.floor_danger_threshold = 2  # Need 2/3 readings to confirm danger
+        
         # Escape patterns for when stuck
         self.escape_patterns = [
             [('backward', 2), ('turn left', 3), ('forward', 1)],
@@ -513,6 +517,100 @@ class EnhancedPiCrawler:
         self.last_successful_move = time.time()
     
     # ========================================================================
+    # SENSOR CHECKING (Private Methods)
+    # ========================================================================
+    
+    def _check_floor_sensors_debounced(self):
+        """
+        Check floor sensors with debouncing to avoid false positives.
+        
+        Returns:
+            bool: True if floor danger was handled, False otherwise
+        """
+        floor_sensors = self.get_floor_sensors()
+        danger_type, suggested_action = self.analyze_floor_danger(floor_sensors)
+        
+        # Add current reading to history
+        self.floor_danger_history.append((danger_type, suggested_action))
+        
+        # Only act if danger is confirmed by multiple readings
+        if danger_type:
+            # Count how many recent readings show danger
+            danger_readings = sum(1 for dt, _ in self.floor_danger_history if dt is not None)
+            
+            if danger_readings >= self.floor_danger_threshold:
+                # Confirmed danger - act on it
+                self.handle_floor_danger(danger_type, suggested_action)
+                # Clear history after handling
+                self.floor_danger_history.clear()
+                return True
+            else:
+                # Potential false positive - log but don't act yet
+                safe_print(f"{ICONS['warning']} Possible floor sensor glitch: {danger_type} ({danger_readings}/{self.floor_danger_threshold})")
+        else:
+            # Clear floor danger counter when sensors read safe
+            if self.consecutive_floor_dangers > 0:
+                self.consecutive_floor_dangers = max(0, self.consecutive_floor_dangers - 1)
+        
+        return False
+    
+    def _check_distance_obstacle(self):
+        """
+        Check distance sensor for obstacles.
+        
+        Returns:
+            bool: True if obstacle was handled, False otherwise
+        """
+        distance = self.get_distance()
+        
+        # Adjust warning threshold based on state
+        if self.state == RobotState.AVOIDING_OBSTACLE:
+            threshold = DISTANCE_SAFE
+        else:
+            threshold = DISTANCE_WARNING
+        
+        if distance < threshold:
+            self.handle_obstacle(distance)
+            return True
+        
+        return False
+    
+    def _check_stuck_condition(self):
+        """
+        Check if robot is stuck and execute escape pattern if needed.
+        
+        Returns:
+            bool: True if escape pattern was executed, False otherwise
+        """
+        if self.is_stuck():
+            self.stuck_counter += 1
+            if self.stuck_counter >= 2:
+                self.execute_escape_pattern()
+                return True
+        return False
+    
+    def _perform_exploration_step(self):
+        """Perform a single exploration movement step"""
+        # Ensure we're in exploring state
+        if self.state not in [RobotState.EXPLORING, RobotState.TILT_CORRECTION]:
+            self.change_state(RobotState.EXPLORING)
+        
+        # Move forward
+        self.move_forward()
+        
+        # Apply balance correction between steps
+        self.apply_balance()
+    
+    def _random_announcement(self):
+        """Occasionally announce status via TTS"""
+        if random.randint(1, 150) == 1:
+            self.announce(random.choice([
+                "Exploring",
+                "All systems nominal",
+                "Navigation active",
+            ]))
+    
+    # ========================================================================
     # MAIN EXPLORATION LOOP
     # ========================================================================
     
@@ -533,7 +631,17 @@ class EnhancedPiCrawler:
         safe_print("=" * 30 + "\n")
     
     def exploration_loop(self):
-        """Main autonomous exploration loop"""
+        """
+        Main autonomous exploration loop.
+        
+        Orchestrates the robot's behavior by checking sensors and executing
+        appropriate actions in priority order:
+        1. Tilt monitoring for speed adjustment
+        2. Floor sensors (highest priority - prevents falls)
+        3. Distance sensors (obstacle avoidance)
+        4. Stuck detection (escape patterns)
+        5. Normal exploration movement
+        """
         safe_print(f"{ICONS['robot']} Starting exploration...\n")
         self.announce("Beginning autonomous exploration")
         
@@ -547,53 +655,26 @@ class EnhancedPiCrawler:
                     self.print_status()
                     last_status_time = time.time()
                 
-                # 1. Update speed from tilt
+                # 1. Update speed based on tilt
                 self.update_speed_from_tilt()
                 
                 # 2. Check floor sensors (highest priority)
-                floor_sensors = self.get_floor_sensors()
-                danger_type, suggested_action = self.analyze_floor_danger(floor_sensors)
-                
-                if danger_type:
-                    self.handle_floor_danger(danger_type, suggested_action)
+                if self._check_floor_sensors_debounced():
                     continue
                 
                 # 3. Check distance sensor for obstacles
-                distance = self.get_distance()
-                
-                # Adjust warning threshold based on state
-                if self.state == RobotState.AVOIDING_OBSTACLE:
-                    threshold = DISTANCE_SAFE
-                else:
-                    threshold = DISTANCE_WARNING
-                
-                if distance < threshold:
-                    self.handle_obstacle(distance)
+                if self._check_distance_obstacle():
                     continue
                 
-                # 4. Check if stuck
-                if self.is_stuck():
-                    self.stuck_counter += 1
-                    if self.stuck_counter >= 2:
-                        self.execute_escape_pattern()
-                        continue
+                # 4. Check if stuck and execute escape
+                if self._check_stuck_condition():
+                    continue
                 
                 # 5. Normal exploration - move forward
-                if self.state not in [RobotState.EXPLORING, RobotState.TILT_CORRECTION]:
-                    self.change_state(RobotState.EXPLORING)
+                self._perform_exploration_step()
                 
-                self.move_forward()
-                
-                # Apply balance correction between steps
-                self.apply_balance()
-                
-                # Random announcements
-                if random.randint(1, 150) == 1:
-                    self.announce(random.choice([
-                        "Exploring",
-                        "All systems nominal",
-                        "Navigation active",
-                    ]))
+                # 6. Random status announcements
+                self._random_announcement()
                 
                 time.sleep(0.1)
             
