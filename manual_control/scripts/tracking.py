@@ -67,7 +67,8 @@ ICONS = {
 # ============================================================================
 
 # Distance sensor configuration (change type here!)
-DISTANCE_SENSOR_TYPE = "HC-SR04"  # Options: "HC-SR04", "VL53L0X", "VL53L1X"
+# Set to None to disable distance sensor and rely only on IR sensors
+DISTANCE_SENSOR_TYPE = None  # Options: None, "HC-SR04", "VL53L0X", "VL53L1X"
 DISTANCE_SENSOR_CONFIG = {
     "HC-SR04": {"trigger_pin": Pin("D2"), "echo_pin": Pin("D3")},
     "VL53L0X": {"i2c_address": 0x29},

@@ -171,15 +171,18 @@ def create_distance_sensor(sensor_type="HC-SR04", **kwargs):
     Factory function to create the appropriate distance sensor.
     
     Args:
-        sensor_type: "HC-SR04", "VL53L0X", or "VL53L1X"
+        sensor_type: None, "HC-SR04", "VL53L0X", or "VL53L1X"
         **kwargs: Sensor-specific parameters
             For HC-SR04: trigger_pin, echo_pin (Pin objects)
             For VL53L0X/VL53L1X: i2c_address (default 0x29)
     
     Returns:
-        DistanceSensor instance or None if initialization failed
+        DistanceSensor instance or None if initialization failed or disabled
     
     Examples:
+        # Disabled (no distance sensor)
+        sensor = create_distance_sensor(None)
+        
         # HC-SR04 Ultrasonic
         sensor = create_distance_sensor("HC-SR04", 
                                        trigger_pin=Pin("D2"), 
@@ -191,6 +194,11 @@ def create_distance_sensor(sensor_type="HC-SR04", **kwargs):
         # VL53L1X Time-of-Flight
         sensor = create_distance_sensor("VL53L1X", i2c_address=0x29)
     """
+    # Handle None/disabled sensor
+    if sensor_type is None:
+        print("Distance sensor disabled - using IR sensors only")
+        return None
+    
     sensor_type = sensor_type.upper()
     
     if sensor_type == "HC-SR04":
