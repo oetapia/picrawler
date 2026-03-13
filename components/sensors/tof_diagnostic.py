@@ -86,8 +86,6 @@ def run_vl53l0x(addr):
     sensor = VL53L0X.VL53L0X(i2c_bus=I2C_BUS, i2c_address=addr)
     sensor.open()
     sensor.start_ranging(VL53L0X.Vl53l0xAccuracyMode.BETTER)
-    timing_budget = sensor.get_timing_budget()
-    print(f"  Timing budget: {timing_budget} ms")
     print("  Streaming readings — Ctrl+C to stop.\n")
     try:
         while True:
@@ -95,7 +93,7 @@ def run_vl53l0x(addr):
             dist_cm = dist_mm / 10.0
             bar = "#" * max(0, min(40, int(dist_cm / 3)))
             print(f"\033[2K\r  {dist_cm:6.1f} cm  |  {bar:<40}", end="", flush=True)
-            time.sleep(timing_budget / 1000.0)
+            time.sleep(0.1)
     finally:
         sensor.stop_ranging()
         sensor.close()
