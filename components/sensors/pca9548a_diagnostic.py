@@ -168,7 +168,7 @@ def detect_vl53l0x(bus, addr, channel_info=""):
         # VL53L0X model ID register is at 0xC0, should return 0xEE
         model_id = bus.read_byte_data(addr, 0xC0)
         if model_id == 0xEE:
-            return "VL53L0X (ID: 0xEE) ✓"
+            return "VL53L0X (ID: 0xEE) [OK]"
     except Exception:
         pass
     
@@ -196,17 +196,17 @@ def main():
     try:
         main_devices = scan_main_bus(I2C_BUS)
     except Exception as e:
-        print(f"  ✗ Error accessing I2C bus: {e}")
-        print(f"  Make sure I2C is enabled: sudo raspi-config → Interface Options → I2C")
+        print(f"  [X] Error accessing I2C bus: {e}")
+        print(f"  Make sure I2C is enabled: sudo raspi-config -> Interface Options -> I2C")
         return 1
     
     if not main_devices:
-        print("  ✗ No I2C devices found!")
+        print("  [X] No I2C devices found!")
         print("  Check wiring: SDA, SCL, VCC, GND")
         print("  Check pull-up resistors (usually 4.7kΩ on SDA/SCL)")
         return 1
     
-    print(f"  ✓ Found {len(main_devices)} device(s) on main bus:")
+    print(f"  [OK] Found {len(main_devices)} device(s) on main bus:")
     for addr in main_devices:
         name = KNOWN_DEVICES.get(addr, "Unknown device")
         print_device_info(addr, name)
@@ -217,7 +217,7 @@ def main():
     mux_addresses = [a for a in main_devices if 0x70 <= a <= 0x77]
     
     if not mux_addresses:
-        print("  ✗ No PCA9548A detected!")
+        print("  [X] No PCA9548A detected!")
         print(f"  Expected address range: 0x70-0x77")
         print(f"  Your devices: {', '.join(f'0x{a:02X}' for a in main_devices)}")
         print()
@@ -228,7 +228,7 @@ def main():
         return 1
     
     mux_addr = mux_addresses[0]
-    print(f"  ✓ PCA9548A detected at 0x{mux_addr:02X}")
+    print(f"  [OK] PCA9548A detected at 0x{mux_addr:02X}")
     
     if len(mux_addresses) > 1:
         print(f"  Note: Multiple possible multiplexers: {', '.join(f'0x{a:02X}' for a in mux_addresses)}")
@@ -240,7 +240,7 @@ def main():
     try:
         mux = PCA9548A(bus_number=I2C_BUS, address=mux_addr)
     except Exception as e:
-        print(f"  ✗ Failed to initialize multiplexer: {e}")
+        print(f"  [X] Failed to initialize multiplexer: {e}")
         return 1
     
     try:
@@ -253,7 +253,7 @@ def main():
         results = mux.scan_all_channels()
         
         if not results:
-            print("  ⚠ No devices found on any multiplexer channel!")
+            print("  [!] No devices found on any multiplexer channel!")
             print()
             print("  This means:")
             print("    - Multiplexer is working (it responds)")
@@ -264,11 +264,11 @@ def main():
             print("    - Each channel needs its own set of devices")
             print("    - Power (VCC) and GND should go to each device")
         else:
-            print(f"  ✓ Found devices on {len(results)} channel(s):")
+            print(f"  [OK] Found devices on {len(results)} channel(s):")
             print()
             
             for channel, devices in sorted(results.items()):
-                print(f"  📍 Channel {channel} (SD{channel}):")
+                print(f"  >> Channel {channel} (SD{channel}):")
                 print(f"     Found {len(devices)} device(s):")
                 
                 for addr in devices:
@@ -299,19 +299,19 @@ def main():
                     oled_count += 1
         
         if vl53_count == 2:
-            print("  ✓ Two VL53L0X sensors detected - perfect for dual ToF setup!")
+            print("  [OK] Two VL53L0X sensors detected - perfect for dual ToF setup!")
             print("    Use different channels for each sensor to avoid conflicts.")
         elif vl53_count == 1:
-            print("  ℹ One VL53L0X sensor detected.")
+            print("  [i] One VL53L0X sensor detected.")
             print("    Connect the second sensor to a different channel.")
         elif vl53_count > 2:
-            print(f"  ℹ {vl53_count} ToF sensors detected.")
+            print(f"  [i] {vl53_count} ToF sensors detected.")
         
         if oled_count >= 1:
-            print(f"  ✓ OLED display(s) detected on {oled_count} channel(s).")
+            print(f"  [OK] OLED display(s) detected on {oled_count} channel(s).")
         
         print()
-        print("  💡 Using the multiplexer in your code:")
+        print("  TIP: Using the multiplexer in your code:")
         print()
         print("     # Import the multiplexer class")
         print("     from components.sensors.pca9548a_mux import PCA9548A")
@@ -349,7 +349,7 @@ if __name__ == "__main__":
         print("\n\nInterrupted by user.")
         sys.exit(0)
     except Exception as e:
-        print(f"\n✗ Unexpected error: {e}")
+        print(f"\n[X] Unexpected error: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)
