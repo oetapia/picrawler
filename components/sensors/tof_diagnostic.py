@@ -25,7 +25,7 @@ VL53L0X_EXPECTED_ID   = 0xEE
 VL53L1X_EXPECTED_ID   = 0xEA
 
 
-# ─── I2C scan ────────────────────────────────────────────────────────────────
+# --- I2C scan ----------------------------------------------------------------
 
 def scan_i2c(bus):
     """Return list of I2C addresses that ACK on the bus."""
@@ -39,7 +39,7 @@ def scan_i2c(bus):
     return found
 
 
-# ─── Model detection ─────────────────────────────────────────────────────────
+# --- Model detection ---------------------------------------------------------
 
 def read_byte_at(bus, addr, reg):
     """Read a single byte from a device register."""
@@ -79,14 +79,14 @@ def detect_model(bus, addr):
     return None, None
 
 
-# ─── Live read loops ──────────────────────────────────────────────────────────
+# --- Live read loops ---------------------------------------------------------
 
 def run_vl53l0x(addr):
     import VL53L0X
     sensor = VL53L0X.VL53L0X(i2c_bus=I2C_BUS, i2c_address=addr)
     sensor.open()
     sensor.start_ranging(VL53L0X.Vl53l0xAccuracyMode.BETTER)
-    print("  Streaming readings — Ctrl+C to stop.\n")
+    print("  Streaming readings - Ctrl+C to stop.\n")
     try:
         while True:
             dist_mm = sensor.get_distance()
@@ -105,7 +105,7 @@ def run_vl53l1x(addr):
     sensor.open()
     sensor.start_ranging(1)   # 1 = short range mode (~1.3 m)
     print("  Ranging mode: short (up to ~130 cm)")
-    print("  Streaming readings — Ctrl+C to stop.\n")
+    print("  Streaming readings - Ctrl+C to stop.\n")
     try:
         while True:
             dist_mm = sensor.get_distance()
@@ -118,14 +118,14 @@ def run_vl53l1x(addr):
         sensor.close()
 
 
-# ─── Main ─────────────────────────────────────────────────────────────────────
+# --- Main --------------------------------------------------------------------
 
 def main():
     print("=" * 55)
     print("  VL53L0X / VL53L1X Time-of-Flight Diagnostic")
     print("=" * 55)
 
-    # Step 1 — scan bus
+    # Step 1 - scan bus
     print(f"\n[1] Scanning I2C bus {I2C_BUS}...")
     bus = smbus.SMBus(I2C_BUS)
     devices = scan_i2c(bus)
@@ -137,9 +137,9 @@ def main():
     print(f"  Found {len(devices)} device(s): " +
           ", ".join(f"0x{a:02X}" for a in devices))
 
-    # Step 2 — detect model
+    # Step 2 - detect model
     if VL53_ADDR not in devices:
-        print(f"\n  No device at 0x{VL53_ADDR:02X} — VL53 sensors default to this address.")
+        print(f"\n  No device at 0x{VL53_ADDR:02X} - VL53 sensors default to this address.")
         print("  Detected addresses:", ", ".join(f"0x{a:02X}" for a in devices))
         return
 
@@ -154,7 +154,7 @@ def main():
 
     print(f"  Model ID register: 0x{model_id:02X}  =>  {model} detected")
 
-    # Step 3 — live readings
+    # Step 3 - live readings
     print(f"\n[3] Initializing {model} and starting live read...")
     try:
         if model == "VL53L0X":
