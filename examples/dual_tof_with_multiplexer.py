@@ -48,7 +48,7 @@ try:
     HAS_VL53L0X = True
 except ImportError:
     HAS_VL53L0X = False
-    print("⚠ VL53L0X library not found. Install with: pip install VL53L0X")
+    print("[!] VL53L0X library not found. Install with: pip install VL53L0X")
 
 # Try to import OLED libraries
 try:
@@ -58,7 +58,7 @@ try:
     HAS_OLED = True
 except ImportError:
     HAS_OLED = False
-    print("⚠ OLED libraries not found. Install with: pip install adafruit-circuitpython-ssd1306")
+    print("[!] OLED libraries not found. Install with: pip install adafruit-circuitpython-ssd1306")
 
 
 class DualToFSensors:
@@ -90,9 +90,9 @@ class DualToFSensors:
             self.sensor_left = VL53L0X.VL53L0X(i2c_bus=1, i2c_address=0x29)
             self.sensor_left.open()
             self.sensor_left.start_ranging(VL53L0X.Vl53l0xAccuracyMode.BETTER)
-            print("  ✓ Left sensor initialized")
+            print("  [OK] Left sensor initialized")
         except Exception as e:
-            print(f"  ✗ Failed to initialize left sensor: {e}")
+            print(f"  [X] Failed to initialize left sensor: {e}")
             raise
         
         # Initialize right sensor
@@ -103,9 +103,9 @@ class DualToFSensors:
             self.sensor_right = VL53L0X.VL53L0X(i2c_bus=1, i2c_address=0x29)
             self.sensor_right.open()
             self.sensor_right.start_ranging(VL53L0X.Vl53l0xAccuracyMode.BETTER)
-            print("  ✓ Right sensor initialized")
+            print("  [OK] Right sensor initialized")
         except Exception as e:
-            print(f"  ✗ Failed to initialize right sensor: {e}")
+            print(f"  [X] Failed to initialize right sensor: {e}")
             raise
         
         # Disable channels when done
@@ -184,9 +184,9 @@ def main():
     print("[1] Initializing PCA9548A multiplexer...")
     try:
         mux = PCA9548A(address=0x70)
-        print(f"  ✓ Multiplexer found at 0x70")
+        print(f"  [OK] Multiplexer found at 0x70")
     except IOError as e:
-        print(f"  ✗ {e}")
+        print(f"  [X] {e}")
         print("  Run pca9548a_diagnostic.py to check your setup")
         return 1
     
@@ -196,7 +196,7 @@ def main():
     results = mux.scan_all_channels()
     
     if not results:
-        print("  ✗ No devices found on any channel!")
+        print("  [X] No devices found on any channel!")
         print("  Connect your sensors to SD0, SD1, etc.")
         mux.close()
         return 1
@@ -213,7 +213,7 @@ def main():
     
     if len(sensor_channels) < 2:
         print()
-        print(f"  ✗ Need 2 VL53L0X sensors, found {len(sensor_channels)}")
+        print(f"  [X] Need 2 VL53L0X sensors, found {len(sensor_channels)}")
         print("  Connect two VL53L0X sensors to different channels")
         mux.close()
         return 1
@@ -227,7 +227,7 @@ def main():
                                  channel_left=sensor_channels[0], 
                                  channel_right=sensor_channels[1])
     except Exception as e:
-        print(f"  ✗ Failed to initialize sensors: {e}")
+        print(f"  [X] Failed to initialize sensors: {e}")
         mux.close()
         return 1
     
@@ -262,7 +262,7 @@ if __name__ == "__main__":
         exit_code = main()
         sys.exit(exit_code)
     except Exception as e:
-        print(f"\n✗ Error: {e}")
+        print(f"\n[X] Error: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)
