@@ -17,6 +17,7 @@ __pycache__/
 recordings/
 logs/
 data/
+.DS_Store
 
 # intermediate versions
 old/
