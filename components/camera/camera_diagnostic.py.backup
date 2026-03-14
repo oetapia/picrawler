@@ -52,7 +52,7 @@ class CameraDiagnostic:
     
     def print_result(self, detected: bool, message: str):
         """Print detection result"""
-        symbol = "[OK]" if detected else "[X]"
+        symbol = "✓" if detected else "✗"
         print(f"{symbol} {message}")
     
     def test_color_detection(self, duration: int = 10):
@@ -66,7 +66,7 @@ class CameraDiagnostic:
         print("Show colored objects to the camera!\n")
         
         for color in colors:
-            print(f"\n-> Testing {color.upper()} detection ({duration}s)...")
+            print(f"\n→ Testing {color.upper()} detection ({duration}s)...")
             self.detector.enable_color_detection(color)
             time.sleep(0.5)
             
@@ -237,11 +237,11 @@ class CameraDiagnostic:
                 # Color detection results
                 print(f"\n{test_name.upper()} DETECTION:")
                 for color, status in result.items():
-                    symbol = "[OK]" if status else "[X]"
+                    symbol = "✓" if status else "✗"
                     status_str = "PASS" if status else "FAIL"
                     print(f"  {symbol} {color:12s} {status_str}")
             else:
-                symbol = "[OK]" if result else "[X]"
+                symbol = "✓" if result else "✗"
                 status_str = "PASS" if result else "FAIL"
                 print(f"{symbol} {test_name:20s} {status_str}")
         
@@ -261,11 +261,11 @@ class CameraDiagnostic:
         print("="*40)
         
         if total_passed == total_tests:
-            print("\n[OK] ALL SYSTEMS OPERATIONAL")
+            print("\n✓ ALL SYSTEMS OPERATIONAL")
         elif total_passed > 0:
-            print(f"\n[!] PARTIAL FUNCTIONALITY ({total_passed}/{total_tests} working)")
+            print(f"\n⚠ PARTIAL FUNCTIONALITY ({total_passed}/{total_tests} working)")
         else:
-            print("\n[X] NO DETECTIONS WORKING - CHECK VILIB INSTALLATION")
+            print("\n✗ NO DETECTIONS WORKING - CHECK VILIB INSTALLATION")
     
     def run_all_tests(self, color_duration: int = 5, other_duration: int = 10):
         """Run all diagnostic tests"""
@@ -292,7 +292,7 @@ class CameraDiagnostic:
             self.test_image_classification(other_duration)
             
         except KeyboardInterrupt:
-            print("\n\n[!] Test interrupted by user")
+            print("\n\n⚠ Test interrupted by user")
         finally:
             self.detector.stop_camera()
         
@@ -328,7 +328,7 @@ class CameraDiagnostic:
                 self.test_image_classification(duration)
             
         except KeyboardInterrupt:
-            print("\n\n[!] Test interrupted by user")
+            print("\n\n⚠ Test interrupted by user")
         finally:
             self.detector.stop_camera()
         
