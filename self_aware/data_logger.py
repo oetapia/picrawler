@@ -71,8 +71,9 @@ class DataLogger:
         """Initialize CSV file with headers."""
         self.csv_headers = [
             'timestamp',
-            # Distance sensor
-            'distance_cm',
+            # Distance sensors (supports both single and dual ToF)
+            'front_distance_cm',
+            'rear_distance_cm',
             # Accelerometer
             'pitch', 'roll',
             'accel_x', 'accel_y', 'accel_z',
@@ -107,8 +108,9 @@ class DataLogger:
         entry = {
             'timestamp': time.time(),
             
-            # Sensors
-            'distance_cm': sensor_data.get('distance', 999.0),
+            # Sensors - support both single and dual ToF
+            'front_distance_cm': sensor_data.get('front_distance', sensor_data.get('distance', 999.0)),
+            'rear_distance_cm': sensor_data.get('rear_distance', 999.0),
             'pitch': sensor_data.get('pitch', 0.0),
             'roll': sensor_data.get('roll', 0.0),
             'accel_x': sensor_data.get('accel_x', 0.0),
