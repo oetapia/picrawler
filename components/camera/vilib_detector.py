@@ -250,12 +250,12 @@ class VilibDetector:
     
     def enable_face_detection(self):
         """Enable face/human detection."""
-        Vilib.face_detect_switch(True)
+        Vilib.face_detect_func(True)
         self._face_detection_enabled = True
     
     def disable_face_detection(self):
         """Disable face/human detection."""
-        Vilib.face_detect_switch(False)
+        Vilib.face_detect_func(False)
         self._face_detection_enabled = False
     
     def get_face_detection(self) -> DetectionResult:
@@ -350,12 +350,12 @@ class VilibDetector:
     
     def enable_traffic_sign_detection(self):
         """Enable traffic sign detection."""
-        Vilib.traffic_sign_detect_switch(True)
+        Vilib.traffic_detect_switch(True)
         self._traffic_sign_detection_enabled = True
     
     def disable_traffic_sign_detection(self):
         """Disable traffic sign detection."""
-        Vilib.traffic_sign_detect_switch(False)
+        Vilib.traffic_detect_switch(False)
         self._traffic_sign_detection_enabled = False
     
     def get_traffic_sign_detection(self) -> DetectionResult:
