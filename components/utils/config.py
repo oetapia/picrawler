@@ -13,14 +13,32 @@ and other configuration values used across different navigation modes.
 
 # Distance sensor type (change here!)
 # Set to None to disable distance sensor and rely only on IR sensors
-DISTANCE_SENSOR_TYPE = None  # Options: None, "HC-SR04", "VL53L0X", "VL53L1X"
+# Options: None, "HC-SR04", "VL53L0X", "VL53L1X", "FRONT_REAR_VL53L0X"
+DISTANCE_SENSOR_TYPE = "FRONT_REAR_VL53L0X"  # Dual ToF with multiplexer
 
 # Pin names as strings to avoid creating Pin objects until needed
 DISTANCE_SENSOR_CONFIG = {
     "HC-SR04": {"trigger_pin": "D2", "echo_pin": "D3"},
     "VL53L0X": {"i2c_address": 0x29},
     "VL53L1X": {"i2c_address": 0x29},
+    "FRONT_REAR_VL53L0X": {
+        "mux_address": 0x70,
+        "front_channel": 2,
+        "rear_channel": 1,
+        "i2c_bus": 1
+    },
 }
+
+# ============================================================================
+# MULTIPLEXER CONFIGURATION (for FRONT_REAR_VL53L0X)
+# ============================================================================
+
+# PCA9548A I2C Multiplexer settings
+MUX_ADDRESS = 0x70
+FRONT_TOF_CHANNEL = 2   # SD2: Front VL53L0X sensor
+REAR_TOF_CHANNEL = 1    # SD1: Rear VL53L0X sensor
+ACCEL_CHANNEL = 7       # SD7: MPU6050 Accelerometer
+I2C_BUS = 1
 
 # ============================================================================
 # MOVEMENT PARAMETERS

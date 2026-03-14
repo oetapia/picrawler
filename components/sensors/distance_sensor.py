@@ -171,13 +171,15 @@ def create_distance_sensor(sensor_type="HC-SR04", **kwargs):
     Factory function to create the appropriate distance sensor.
     
     Args:
-        sensor_type: None, "HC-SR04", "VL53L0X", or "VL53L1X"
+        sensor_type: None, "HC-SR04", "VL53L0X", "VL53L1X", or "FRONT_REAR_VL53L0X"
         **kwargs: Sensor-specific parameters
             For HC-SR04: trigger_pin, echo_pin (Pin objects)
             For VL53L0X/VL53L1X: i2c_address (default 0x29)
+            For FRONT_REAR_VL53L0X: mux_address, front_channel, rear_channel, i2c_bus
     
     Returns:
-        DistanceSensor instance or None if initialization failed or disabled
+        DistanceSensor instance or FrontRearToFSensors instance, 
+        or None if initialization failed or disabled
     
     Examples:
         # Disabled (no distance sensor)
@@ -193,6 +195,13 @@ def create_distance_sensor(sensor_type="HC-SR04", **kwargs):
         
         # VL53L1X Time-of-Flight
         sensor = create_distance_sensor("VL53L1X", i2c_address=0x29)
+        
+        # Dual VL53L0X with Multiplexer
+        sensor = create_distance_sensor("FRONT_REAR_VL53L0X",
+                                       mux_address=0x70,
+                                       front_channel=2,
+                                       rear_channel=1,
+                                       i2c_bus=1)
     """
     # Handle None/disabled sensor
     if sensor_type is None:
@@ -224,9 +233,32 @@ def create_distance_sensor(sensor_type="HC-SR04", **kwargs):
         i2c_address = kwargs.get('i2c_address', 0x29)
         return VL53L1XSensor(i2c_address)
     
+    elif sensor_type == "FRONT_REAR_VL53L0X":
+        # Import the dual ToF sensor class
+        try:
+            from components.sensors.front_rear_tof_sensor import FrontRearToFSensors
+            
+            mux_address = kwargs.get('mux_address', 0x70)
+            front_channel = kwargs.get('front_channel', 2)
+            rear_channel = kwargs.get('rear_channel', 1)
+            i2c_bus = kwargs.get('i2c_bus', 1)
+            
+            return FrontRearToFSensors(
+                mux_address=mux_address,
+                front_channel=front_channel,
+                rear_channel=rear_channel,
+                i2c_bus=i2c_bus
+            )
+        except ImportError as e:
+            print(f"Error: Failed to import FrontRearToFSensors: {e}")
+            return None
+        except Exception as e:
+            print(f"Error: Failed to initialize FRONT_REAR_VL53L0X: {e}")
+            return None
+    
     else:
         print(f"Unknown sensor type: {sensor_type}")
-        print("Supported types: HC-SR04, VL53L0X, VL53L1X")
+        print("Supported types: HC-SR04, VL53L0X, VL53L1X, FRONT_REAR_VL53L0X")
         return None
 
 
