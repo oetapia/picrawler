@@ -421,7 +421,7 @@ def live_data_loop(mux, sensors):
                     mux.select_channel(ACCEL_CHANNEL)
                     time.sleep(0.01)
                     pitch, roll = accelerometer.get_tilt()
-                    ax, ay, az = accelerometer.read()
+                    ax, ay, az = accelerometer.read_accel()
                     
                     print(f"Accelerometer (Channel {ACCEL_CHANNEL}, SD{ACCEL_CHANNEL}):")
                     print(f"  Pitch:       {pitch:+7.2f}°")
