@@ -267,12 +267,16 @@ class CameraDiagnostic:
         else:
             print("\n[X] NO DETECTIONS WORKING - CHECK VILIB INSTALLATION")
     
-    def run_all_tests(self, color_duration: int = 5, other_duration: int = 10):
+    def run_all_tests(self, color_duration: int = 5, other_duration: int = 10, skip_tests: list = None):
         """Run all diagnostic tests"""
+        skip_tests = skip_tests or []
+        
         print("\n" + "="*60)
         print("  CAMERA DETECTION DIAGNOSTIC TOOL")
         print("="*60)
         print("\nThis will test all vilib detection capabilities.")
+        if skip_tests:
+            print(f"Skipping tests: {', '.join(skip_tests)}")
         print("View camera stream at: http://localhost:9000/mjpg")
         print("\nStarting in 3 seconds...")
         time.sleep(3)
@@ -283,13 +287,19 @@ class CameraDiagnostic:
             self.detector.start_display(web=True)
             time.sleep(1)
             
-            # Run tests
-            self.test_object_detection(other_duration)  # Object detection as default
-            self.test_color_detection(color_duration)
-            self.test_face_detection(other_duration)
-            self.test_qr_detection(other_duration)
-            self.test_traffic_sign_detection(other_duration)
-            self.test_image_classification(other_duration)
+            # Run tests (skip any in skip list)
+            if 'object' not in skip_tests:
+                self.test_object_detection(other_duration)
+            if 'color' not in skip_tests:
+                self.test_color_detection(color_duration)
+            if 'face' not in skip_tests:
+                self.test_face_detection(other_duration)
+            if 'qr' not in skip_tests:
+                self.test_qr_detection(other_duration)
+            if 'traffic' not in skip_tests:
+                self.test_traffic_sign_detection(other_duration)
+            if 'classify' not in skip_tests:
+                self.test_image_classification(other_duration)
             
         except KeyboardInterrupt:
             print("\n\n[!] Test interrupted by user")
@@ -344,10 +354,14 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python components/camera/camera_diagnostic.py                    # Run all tests
-  python components/camera/camera_diagnostic.py --mode object      # Test object detection
-  python components/camera/camera_diagnostic.py --mode color -d 15 # Test colors for 15s each
-  python components/camera/camera_diagnostic.py --mode face -d 20  # Test face for 20s
+  python components/camera/camera_diagnostic.py                       # Run all tests
+  python components/camera/camera_diagnostic.py --skip qr             # Run all tests except QR
+  python components/camera/camera_diagnostic.py --skip qr classify    # Skip QR and classify
+  python components/camera/camera_diagnostic.py --mode object         # Test object detection
+  python components/camera/camera_diagnostic.py --mode color -d 15    # Test colors for 15s each
+  python components/camera/camera_diagnostic.py --mode face -d 20     # Test face for 20s
+
+Note: Use --skip to avoid tests that cause errors (e.g., QR code has vilib bug)
         """
     )
     
@@ -363,6 +377,13 @@ Examples:
         default=10,
         help='Test duration in seconds for each test (default: 10)'
     )
+    parser.add_argument(
+        '--skip',
+        nargs='+',
+        choices=['color', 'face', 'qr', 'object', 'traffic', 'classify'],
+        default=[],
+        help='Tests to skip (space-separated list)'
+    )
     
     args = parser.parse_args()
     
@@ -373,7 +394,7 @@ Examples:
     if args.mode == 'all':
         # For 'all', use shorter duration per color
         color_duration = max(5, args.duration // 2)
-        diagnostic.run_all_tests(color_duration=color_duration, other_duration=args.duration)
+        diagnostic.run_all_tests(color_duration=color_duration, other_duration=args.duration, skip_tests=args.skip)
     else:
         diagnostic.run_single_test(args.mode, args.duration)
 
