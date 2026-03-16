@@ -191,7 +191,7 @@ class DataLogger:
         
         # Print stats
         duration = time.time() - self.start_time
-        print(f"\n📝 Data logger closed: {self.log_file}")
+        print(f"\n[EMOJI] Data logger closed: {self.log_file}")
         print(f"   Total entries: {self.entries_logged}")
         print(f"   Duration: {duration:.1f}s")
         print(f"   Average rate: {self.entries_logged/duration:.1f} entries/sec")
@@ -288,7 +288,7 @@ def merge_log_files(log_files, output_file="merged_dataset.csv"):
     merged_df = pd.concat(dfs, ignore_index=True)
     merged_df.to_csv(output_file, index=False)
     
-    print(f"\n[OK] Merged {len(log_files)} files -> {output_file}")
+    print(f"\n[EMOJI] Merged {len(log_files)} files -> {output_file}")
     print(f"  Total samples: {len(merged_df)}")
     return merged_df
 

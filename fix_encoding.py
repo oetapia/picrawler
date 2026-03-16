@@ -13,7 +13,26 @@ import os
 import sys
 import shutil
 import argparse
+import re
 from pathlib import Path
+
+
+# Emoji Unicode ranges (comprehensive)
+EMOJI_PATTERN = re.compile(
+    "["
+    "\U0001F600-\U0001F64F"  # emoticons
+    "\U0001F300-\U0001F5FF"  # symbols & pictographs
+    "\U0001F680-\U0001F6FF"  # transport & map symbols
+    "\U0001F700-\U0001F77F"  # alchemical symbols
+    "\U0001F780-\U0001F7FF"  # Geometric Shapes Extended
+    "\U0001F800-\U0001F8FF"  # Supplemental Arrows-C
+    "\U0001F900-\U0001F9FF"  # Supplemental Symbols and Pictographs
+    "\U0001FA00-\U0001FA6F"  # Chess Symbols
+    "\U0001FA70-\U0001FAFF"  # Symbols and Pictographs Extended-A
+    "\U00002702-\U000027B0"  # Dingbats
+    "\U000024C2-\U0001F251" 
+    "]+"
+)
 
 
 # Character replacement mappings (Unicode -> ASCII)
@@ -99,6 +118,14 @@ def fix_encoding(file_path: Path, backup: bool = True, dry_run: bool = False) ->
         original_content = content
         changes_made = 0
         changes_detail = []
+        
+        # First, remove all emojis
+        emoji_matches = EMOJI_PATTERN.findall(content)
+        if emoji_matches:
+            emoji_count = len(emoji_matches)
+            content = EMOJI_PATTERN.sub('[EMOJI]', content)
+            changes_made += emoji_count
+            changes_detail.append(f"  - Removed {emoji_count} emoji(s) -> '[EMOJI]'")
         
         # Apply replacements
         for unicode_char, ascii_equiv in CHAR_REPLACEMENTS.items():
