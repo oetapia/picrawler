@@ -28,21 +28,28 @@ class DataLogger:
     - Timestamped entries
     """
     
-    def __init__(self, log_dir="self_aware/logs", format="csv", buffer_size=100):
+    def __init__(self, log_dir=None, format="csv", buffer_size=100):
         """
         Initialize data logger.
         
         Args:
-            log_dir: Directory to save log files
+            log_dir: Directory to save log files (default: script_dir/logs)
             format: "csv" or "json"
             buffer_size: Number of entries to buffer before writing
         """
+        # Use script-relative path if no log_dir provided
+        if log_dir is None:
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            log_dir = os.path.join(script_dir, "logs")
+        
         self.log_dir = Path(log_dir)
         self.format = format.lower()
         self.buffer_size = buffer_size
         
-        # Create log directory
+        # Create log directory with proper permissions
         self.log_dir.mkdir(parents=True, exist_ok=True)
+        # Set directory permissions to rwxr-xr-x (755)
+        os.chmod(self.log_dir, 0o755)
         
         # Create session file
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -95,6 +102,9 @@ class DataLogger:
         self.csv_writer = csv.DictWriter(self.csv_file, fieldnames=self.csv_headers)
         self.csv_writer.writeheader()
         self.csv_file.flush()
+        
+        # Set file permissions to rw-rw-rw- (666) so files can be edited without sudo
+        os.chmod(self.log_file, 0o666)
     
     def log_entry(self, sensor_data, action_data, context_data):
         """

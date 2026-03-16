@@ -57,7 +57,7 @@ class AutonomousNavigatorWithLogging:
     """
     
     def __init__(self, distance_sensor_type=DISTANCE_SENSOR_TYPE, 
-                 enable_logging=False, log_rate_hz=10, log_dir="self_aware/logs"):
+                 enable_logging=False, log_rate_hz=10, log_dir=None):
         """
         Initialize autonomous navigator with optional logging.
         
@@ -65,7 +65,7 @@ class AutonomousNavigatorWithLogging:
             distance_sensor_type: Type of distance sensor to use
             enable_logging: Enable data logging for ML
             log_rate_hz: Logging sample rate (Hz)
-            log_dir: Directory to save log files
+            log_dir: Directory to save log files (default: script_dir/logs)
         """
         safe_print(f"\n{ICONS['robot']} Initializing Autonomous Navigator with Logging...")
         
@@ -510,8 +510,8 @@ def parse_args():
                        help='Enable data logging for ML training')
     parser.add_argument('--log-rate', type=int, default=10,
                        help='Logging sample rate in Hz (default: 10)')
-    parser.add_argument('--log-dir', type=str, default='self_aware/logs',
-                       help='Directory to save log files (default: self_aware/logs)')
+    parser.add_argument('--log-dir', type=str, default=None,
+                       help='Directory to save log files (default: script_dir/logs)')
     
     return parser.parse_args()
 
