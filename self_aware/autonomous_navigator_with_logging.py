@@ -4,7 +4,8 @@
 Autonomous Navigation System with Data Logging
 
 Extended version of autonomous_navigator.py that logs sensor data and actions
-for machine learning training data collection.
+for machine learning training data collection. Optionally captures photos for
+vision-based ML models.
 
 Usage:
     # With logging enabled (10 Hz)
@@ -13,51 +14,46 @@ Usage:
     # With custom log rate
     python3 self_aware/autonomous_navigator_with_logging.py --log --log-rate 20
     
+    # With photo capture for vision ML (2 Hz, 320x240)
+    python3 self_aware/autonomous_navigator_with_logging.py --log --photos
+    
+    # Custom photo settings
+    python3 self_aware/autonomous_navigator_with_logging.py --log --photos --photo-rate 1.5
+    
     # Custom log directory
     python3 self_aware/autonomous_navigator_with_logging.py --log --log-dir my_logs
 """
 
 import os
 import sys
-import time
-import random
 import argparse
-from threading import Event
 
 # Add project root to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from picrawler import Picrawler
-from robot_hat import TTS, utils
-
-# Import refactored components
-from components.navigation import SmoothMotionController, compute_balance_pose, ObstacleHandler
-from components.navigation.balance import get_neutral_pose, get_compact_pose
-from components.navigation_state import RobotState, StuckDetector
-from components.sensors.sensor_fusion import SensorHub
 from components.sensors import accelerometer
 from components.utils import safe_print, ICONS
-from components.utils.config import (
-    SPEED_NORMAL, SPEED_MIN, SPEED_CAUTION,
-    DISTANCE_WARNING, DISTANCE_SAFE, DISTANCE_DANGER,
-    TILT_CAUTION, TILT_DANGER, BALANCE_DEADZONE, BALANCE_SPEED,
-    DISTANCE_SENSOR_TYPE
-)
 
-# Import data logger
+# Import base autonomous navigator
+from self_aware.autonomous_navigator import AutonomousNavigator
+
+# Import data loggers
 from self_aware.data_logger import DataLogger, ThrottledLogger
+from self_aware.data_logger_with_photos import DataLoggerWithPhotos
 
 
-class AutonomousNavigatorWithLogging:
+class AutonomousNavigatorWithLogging(AutonomousNavigator):
     """
     Autonomous navigation system with integrated data logging.
     
     Extends AutonomousNavigator to log sensor readings and actions
-    for ML training data collection.
+    for ML training data collection. Optionally captures photos for
+    vision-based path detection models.
     """
     
-    def __init__(self, distance_sensor_type=DISTANCE_SENSOR_TYPE, 
-                 enable_logging=False, log_rate_hz=10, log_dir=None):
+    def __init__(self, distance_sensor_type=None, 
+                 enable_logging=False, log_rate_hz=10, log_dir=None,
+                 enable_photos=False, photo_rate_hz=2.0, photo_resolution=(320, 240)):
         """
         Initialize autonomous navigator with optional logging.
         
@@ -65,75 +61,39 @@ class AutonomousNavigatorWithLogging:
             distance_sensor_type: Type of distance sensor to use
             enable_logging: Enable data logging for ML
             log_rate_hz: Logging sample rate (Hz)
-            log_dir: Directory to save log files (default: script_dir/logs)
+            log_dir: Directory to save log files (default: self_aware/logs)
+            enable_photos: Enable photo capture (requires enable_logging=True)
+            photo_rate_hz: Photo capture rate (Hz, default: 2.0)
+            photo_resolution: Photo size tuple (width, height, default: 320x240)
         """
-        safe_print(f"\n{ICONS['robot']} Initializing Autonomous Navigator with Logging...")
+        # Initialize base class
+        super().__init__(distance_sensor_type)
         
-        # Reset MCU/GPIO for clean state
-        safe_print("Resetting MCU...")
-        utils.reset_mcu()
-        time.sleep(0.2)
-        
-        # Core hardware
-        self.crawler = Picrawler()
-        self.tts = TTS()
-        
-        # Initialize refactored components
-        self.motion = SmoothMotionController()
-        self.sensors = SensorHub(distance_sensor_type)
-        self.obstacle_handler = ObstacleHandler()
-        self.stuck_detector = StuckDetector()
-        
-        # State management
-        self.state = RobotState.EXPLORING
-        self.previous_state = RobotState.EXPLORING
-        
-        # Control flags
-        self.running = False
-        self.stop_event = Event()
-        
-        # Statistics
-        self.total_steps = 0
-        self.start_time = time.time()
-        
-        # Data logging
+        # Data logging setup
         self.enable_logging = enable_logging
+        self.enable_photos = enable_photos
         self.logger = None
+        
         if enable_logging:
-            base_logger = DataLogger(log_dir=log_dir, format="csv", buffer_size=100)
-            self.logger = ThrottledLogger(base_logger, sample_rate_hz=log_rate_hz)
-            safe_print(f"{ICONS['check']} Data logging enabled at {log_rate_hz} Hz")
-        
-        # Last action for logging
-        self.last_action = 'none'
-        self.last_action_steps = 0
-        self.last_action_speed = 0
-        
-        self._print_initialization_status()
-        safe_print(f"{ICONS['check']} Autonomous Navigator ready!\n")
-    
-    def _print_initialization_status(self):
-        """Print status of all components."""
-        sensor_status = self.sensors.get_sensor_status()
-        safe_print(f"\n  Sensor Status:")
-        safe_print(f"    Distance: {sensor_status['distance_sensor']}")
-        safe_print(f"    Accelerometer: {sensor_status['accelerometer']}")
-        safe_print(f"    Floor sensors: {sensor_status['floor_sensors']}")
-    
-    def announce(self, message):
-        """Announce status via TTS."""
-        safe_print(f"🔊 {message}")
-        try:
-            self.tts.say(message)
-        except Exception as e:
-            safe_print(f"TTS Error: {e}")
-    
-    def change_state(self, new_state):
-        """Change robot state."""
-        if new_state != self.state:
-            self.previous_state = self.state
-            self.state = new_state
-            safe_print(f"State: {self.previous_state.value} → {new_state.value}")
+            if enable_photos:
+                # Use photo-enabled logger
+                safe_print(f"{ICONS['camera']} Initializing photo capture at {photo_rate_hz} Hz...")
+                self.logger = DataLoggerWithPhotos(
+                    log_dir=log_dir or "self_aware/logs",
+                    format="csv",
+                    buffer_size=100,
+                    capture_photos=True,
+                    photo_rate_hz=photo_rate_hz,
+                    photo_resolution=photo_resolution
+                )
+                # Start photo capture
+                self.logger.start_photo_capture()
+                safe_print(f"{ICONS['check']} Photo capture enabled ({photo_resolution[0]}x{photo_resolution[1]})")
+            else:
+                # Use regular throttled logger
+                base_logger = DataLogger(log_dir=log_dir, format="csv", buffer_size=100)
+                self.logger = ThrottledLogger(base_logger, sample_rate_hz=log_rate_hz)
+                safe_print(f"{ICONS['check']} Data logging enabled at {log_rate_hz} Hz")
     
     # ========================================================================
     # DATA LOGGING
@@ -168,6 +128,7 @@ class AutonomousNavigatorWithLogging:
             
             sensor_data = {
                 'distance': distance,
+                'front_distance': distance,  # For photo logger compatibility
                 'pitch': pitch,
                 'roll': roll,
                 'accel_x': accel_x,
@@ -200,81 +161,45 @@ class AutonomousNavigatorWithLogging:
                 'speed': self.motion.get_speed(),
             }
             
-            # Log entry (throttled to configured rate)
-            self.logger.log_entry(sensor_data, action_data, context_data)
+            # Log entry (with or without photos)
+            if self.enable_photos:
+                self.logger.log_entry_with_photo(sensor_data, action_data, context_data)
+            else:
+                self.logger.log_entry(sensor_data, action_data, context_data)
             
         except Exception as e:
             safe_print(f"Logging error: {e}")
     
     # ========================================================================
-    # BALANCE MANAGEMENT
+    # OVERRIDE METHODS TO ADD LOGGING
     # ========================================================================
     
     def apply_balance(self):
-        """Apply dynamic balance correction based on tilt."""
-        if not self.sensors.has_accelerometer():
-            return
+        """Apply dynamic balance correction with logging."""
+        # Call parent implementation
+        super().apply_balance()
         
-        try:
+        # Log balance action if balance was applied
+        if self.sensors.has_accelerometer():
             pitch, roll = self.sensors.get_tilt()
+            from components.utils.config import BALANCE_DEADZONE
             max_tilt = max(abs(pitch), abs(roll))
-            
-            if max_tilt < BALANCE_DEADZONE:
-                return
-            
-            pose = compute_balance_pose(pitch, roll)
-            self.crawler.do_step(pose, BALANCE_SPEED)
-            safe_print(f"{ICONS['tilt']} Balance: pitch={pitch:+.1f}° roll={roll:+.1f}°")
-            
-            # Log balance action
-            self.log_current_state(action='balance', steps=1)
-            
-        except Exception as e:
-            safe_print(f"Balance error: {e}")
-    
-    def update_speed_from_tilt(self):
-        """Adjust speed based on tilt angle."""
-        if not self.sensors.has_accelerometer():
-            return
-        
-        pitch, roll = self.sensors.get_tilt()
-        max_tilt = max(abs(pitch), abs(roll))
-        
-        if max_tilt > TILT_DANGER:
-            self.motion.set_target_speed(SPEED_MIN)
-            if self.state not in [RobotState.EMERGENCY, RobotState.TILT_CORRECTION]:
-                self.change_state(RobotState.TILT_CORRECTION)
-                safe_print(f"{ICONS['warning']} Danger tilt: {max_tilt:.1f}°")
-        
-        elif max_tilt > TILT_CAUTION:
-            self.motion.set_target_speed(SPEED_CAUTION)
-            if self.state == RobotState.EXPLORING:
-                self.change_state(RobotState.TILT_CORRECTION)
-        
-        else:
-            if self.state == RobotState.TILT_CORRECTION:
-                self.change_state(RobotState.EXPLORING)
-            if self.state == RobotState.EXPLORING:
-                self.motion.set_target_speed(SPEED_NORMAL)
-    
-    # ========================================================================
-    # MOVEMENT EXECUTION
-    # ========================================================================
+            if max_tilt >= BALANCE_DEADZONE:
+                self.log_current_state(action='balance', steps=1)
     
     def move_forward(self):
-        """Execute smooth forward movement."""
-        speed = self.motion.update()
-        safe_print(f"{ICONS['forward']} Forward (speed={speed})")
-        
+        """Execute smooth forward movement with logging."""
         # Log before action
         self.log_current_state(action='forward', steps=1)
         
-        self.crawler.do_action('forward', 1, speed)
-        self.stuck_detector.record_successful_move()
-        self.total_steps += 1
+        # Call parent implementation
+        super().move_forward()
     
     def execute_obstacle_avoidance(self, distance):
-        """Execute obstacle avoidance maneuver."""
+        """Execute obstacle avoidance maneuver with logging."""
+        from components.navigation_state import RobotState
+        from components.utils.config import DISTANCE_WARNING, DISTANCE_SAFE
+        
         self.change_state(RobotState.AVOIDING_OBSTACLE)
         self.stuck_detector.record_obstacle()
         
@@ -294,12 +219,14 @@ class AutonomousNavigatorWithLogging:
             self.announce("Emergency stop!")
             self.log_current_state(action='emergency_stop', steps=0)
         
-        # Execute backward movement
+        # Execute backward movement with logging
         self.log_current_state(action='backward', steps=action['backward_steps'])
         self.crawler.do_action('backward', action['backward_steps'], self.motion.get_speed())
+        
+        import time
         time.sleep(0.4)
         
-        # Execute turn
+        # Execute turn with logging
         turn_action = 'turn_left' if action['turn_direction'] == 'turn left' else 'turn_right'
         self.log_current_state(action=turn_action, steps=action['turn_amount'])
         self.crawler.do_action(action['turn_direction'], action['turn_amount'], 
@@ -307,7 +234,12 @@ class AutonomousNavigatorWithLogging:
         time.sleep(0.3)
     
     def execute_floor_danger_avoidance(self, danger_type, suggested_action):
-        """Execute floor danger avoidance maneuver."""
+        """Execute floor danger avoidance maneuver with logging."""
+        from components.navigation_state import RobotState
+        from components.navigation.balance import get_compact_pose
+        from components.utils.config import SPEED_MIN
+        import time
+        
         self.change_state(RobotState.AVOIDING_FLOOR_DANGER)
         self.stuck_detector.record_floor_danger()
         
@@ -327,14 +259,14 @@ class AutonomousNavigatorWithLogging:
             time.sleep(0.5)
             return
         
-        # Execute primary action
+        # Execute primary action with logging
         if action['action']:
             self.log_current_state(action=action['action'], steps=action['steps'])
             self.crawler.do_action(action['action'], action['steps'], 
                                   self.motion.get_speed())
             time.sleep(0.3)
         
-        # Execute secondary action
+        # Execute secondary action with logging
         if action['secondary_action']:
             self.log_current_state(action=action['secondary_action'], 
                                   steps=action['secondary_steps'])
@@ -343,7 +275,10 @@ class AutonomousNavigatorWithLogging:
             time.sleep(0.3)
     
     def execute_escape_pattern(self):
-        """Execute escape pattern when stuck."""
+        """Execute escape pattern when stuck with logging."""
+        from components.navigation_state import RobotState
+        import time
+        
         self.change_state(RobotState.STUCK)
         pattern = self.stuck_detector.get_escape_pattern()
         
@@ -359,139 +294,51 @@ class AutonomousNavigatorWithLogging:
         
         self.stuck_detector.reset()
     
-    # ========================================================================
-    # MAIN NAVIGATION LOOP
-    # ========================================================================
-    
-    def check_and_handle_sensors(self):
-        """Check all sensors and handle any detected conditions."""
-        # Check floor sensors (highest priority)
-        danger_type, suggested_action = self.sensors.check_floor_danger_debounced()
-        if danger_type:
-            self.execute_floor_danger_avoidance(danger_type, suggested_action)
-            return True
-        
-        # Check distance sensor for obstacles
-        if self.sensors.has_distance_sensor():
-            distance = self.sensors.get_distance()
-            threshold = DISTANCE_SAFE if self.state == RobotState.AVOIDING_OBSTACLE else DISTANCE_WARNING
-            
-            if distance < threshold:
-                self.execute_obstacle_avoidance(distance)
-                return True
-        
-        # Check if stuck
-        if self.stuck_detector.is_stuck():
-            self.stuck_detector.increment_stuck_counter()
-            if self.stuck_detector.should_execute_escape():
-                self.execute_escape_pattern()
-                return True
-        
-        return False
-    
     def print_status(self):
-        """Print current navigation status."""
-        uptime = time.time() - self.start_time
-        pitch, roll = self.sensors.get_tilt()
+        """Print current navigation status with logging stats."""
+        # Call parent implementation
+        super().print_status()
         
-        safe_print(f"\n{ICONS['stats']} ===== Status =====")
-        safe_print(f"  State: {self.state.value}")
-        safe_print(f"  Uptime: {uptime:.1f}s")
-        safe_print(f"  Steps: {self.total_steps}")
-        safe_print(f"  Speed: {self.motion.get_speed()}")
-        
-        stuck_status = self.stuck_detector.get_status()
-        safe_print(f"  Obstacles: {stuck_status['consecutive_obstacles']}")
-        safe_print(f"  Floor dangers: {stuck_status['consecutive_floor_dangers']}")
-        
-        if self.sensors.has_accelerometer():
-            safe_print(f"  Tilt: pitch={pitch:+.1f}° roll={roll:+.1f}°")
-        
-        # Logging stats
+        # Add logging-specific stats
         if self.enable_logging and self.logger:
-            log_stats = self.logger.get_stats()
-            safe_print(f"  Logged: {log_stats['entries_logged']} samples ({log_stats['rate']:.1f} Hz)")
+            if self.enable_photos:
+                # Photo logger stats
+                photo_stats = self.logger.photo_logger.get_stats() if hasattr(self.logger, 'photo_logger') else {}
+                safe_print(f"  Photos captured: {photo_stats.get('frames_captured', 0)}")
+                safe_print(f"  Sensor entries: {self.logger.entries_logged}")
+            else:
+                # Regular logger stats
+                log_stats = self.logger.get_stats()
+                safe_print(f"  Logged: {log_stats['entries_logged']} samples ({log_stats['rate']:.1f} Hz)")
         
-        safe_print("=" * 30 + "\n")
-    
-    def exploration_loop(self):
-        """Main autonomous exploration loop with logging."""
-        safe_print(f"{ICONS['robot']} Starting autonomous exploration...\n")
-        self.announce("Beginning autonomous navigation")
-        
-        last_status_time = time.time()
-        status_interval = 30
-        
-        while self.running and not self.stop_event.is_set():
-            try:
-                # Periodic status report
-                if time.time() - last_status_time > status_interval:
-                    self.print_status()
-                    last_status_time = time.time()
-                
-                # Update speed based on tilt
-                self.update_speed_from_tilt()
-                
-                # Check sensors and handle any detected conditions
-                action_taken = self.check_and_handle_sensors()
-                
-                if action_taken:
-                    continue
-                
-                # No obstacles or dangers - proceed with exploration
-                if self.state not in [RobotState.EXPLORING, RobotState.TILT_CORRECTION]:
-                    self.change_state(RobotState.EXPLORING)
-                
-                # Move forward
-                self.move_forward()
-                
-                # Apply balance correction
-                self.apply_balance()
-                
-                # Random status announcements
-                if random.randint(1, 150) == 1:
-                    self.announce(random.choice([
-                        "Exploring",
-                        "All systems nominal",
-                        "Navigation active",
-                    ]))
-                
-                time.sleep(0.1)
-            
-            except KeyboardInterrupt:
-                safe_print(f"\n{ICONS['stop']} Manual stop")
-                break
-            
-            except Exception as e:
-                safe_print(f"Error in navigation loop: {e}")
-                time.sleep(1)
-    
-    def start(self):
-        """Start autonomous navigation."""
-        self.running = True
-        self.exploration_loop()
+        safe_print("")
     
     def stop(self):
-        """Stop navigation and print final stats."""
+        """Stop navigation, close logger, and print final stats."""
         safe_print(f"\n{ICONS['stop']} Stopping navigation...")
         self.running = False
         self.stop_event.set()
         
+        import time
         uptime = time.time() - self.start_time
         safe_print(f"\n{ICONS['stats']} ===== Final Statistics =====")
         safe_print(f"  Runtime: {uptime:.1f}s")
         safe_print(f"  Total steps: {self.total_steps}")
         safe_print(f"  Final state: {self.state.value}")
         
-        # Close logger
+        # Close logger and show stats
         if self.enable_logging and self.logger:
             self.logger.close()
         
         safe_print("=" * 40)
         
-        # Return to neutral stance
-        neutral_pose = get_neutral_pose()
-        self.crawler.do_step(neutral_pose, 40)
+        # Return to compact pose for safe pickup (using parent's implementation)
+        safe_print(f"\n{ICONS['robot']} Moving to compact pose for safe pickup...")
+        from components.navigation.balance import get_compact_pose
+        compact_pose = get_compact_pose()
+        self.crawler.do_step(compact_pose, 40)
+        time.sleep(0.5)  # Give time to settle
+        safe_print(f"{ICONS['check']} Robot ready for pickup")
         
         # Close sensors
         self.sensors.close()
@@ -511,7 +358,13 @@ def parse_args():
     parser.add_argument('--log-rate', type=int, default=10,
                        help='Logging sample rate in Hz (default: 10)')
     parser.add_argument('--log-dir', type=str, default=None,
-                       help='Directory to save log files (default: script_dir/logs)')
+                       help='Directory to save log files (default: self_aware/logs)')
+    parser.add_argument('--photos', action='store_true',
+                       help='Enable photo capture with logging (requires --log)')
+    parser.add_argument('--photo-rate', type=float, default=2.0,
+                       help='Photo capture rate in Hz (default: 2.0)')
+    parser.add_argument('--photo-resolution', type=str, default='320x240',
+                       help='Photo resolution WxH (default: 320x240)')
     
     return parser.parse_args()
 
@@ -520,21 +373,50 @@ def main():
     """Main entry point for autonomous navigation with logging."""
     args = parse_args()
     
+    # Validation: photos require logging
+    if args.photos and not args.log:
+        safe_print(f"\n{ICONS['warning']} Error: --photos requires --log to be enabled")
+        safe_print("Usage: python3 autonomous_navigator_with_logging.py --log --photos")
+        sys.exit(1)
+    
+    # Parse photo resolution
+    photo_resolution = (320, 240)  # Default
+    if args.photo_resolution:
+        try:
+            width, height = args.photo_resolution.lower().split('x')
+            photo_resolution = (int(width), int(height))
+        except:
+            safe_print(f"{ICONS['warning']} Invalid photo resolution format. Using default 320x240")
+    
+    # Print banner
+    from components.utils.config import DISTANCE_SENSOR_TYPE
+    
     safe_print(f"\n{ICONS['robot']} PiCrawler Autonomous Navigation System")
     safe_print("=" * 50)
     safe_print("Using refactored components from components/")
     safe_print("Distance Sensor: {}".format(DISTANCE_SENSOR_TYPE or "None (IR only)"))
+    
     if args.log:
         safe_print(f"Data Logging: ENABLED ({args.log_rate} Hz)")
-        safe_print(f"Log Directory: {args.log_dir}")
+        if args.photos:
+            safe_print(f"Photo Capture: ENABLED ({args.photo_rate} Hz, {photo_resolution[0]}x{photo_resolution[1]})")
+            safe_print("Photos will be used for clear/non-clear path detection ML")
+        else:
+            safe_print("Photo Capture: DISABLED (use --photos to enable)")
+        safe_print(f"Log Directory: {args.log_dir or 'self_aware/logs'}")
     else:
         safe_print("Data Logging: DISABLED (use --log to enable)")
+    
     safe_print("=" * 50 + "\n")
     
+    # Create navigator with logging configuration
     navigator = AutonomousNavigatorWithLogging(
         enable_logging=args.log,
         log_rate_hz=args.log_rate,
-        log_dir=args.log_dir
+        log_dir=args.log_dir,
+        enable_photos=args.photos,
+        photo_rate_hz=args.photo_rate,
+        photo_resolution=photo_resolution
     )
     
     try:
