@@ -51,9 +51,9 @@ class SensorHub:
                 accelerometer.wake()
                 time.sleep(0.1)
                 self.accel_available = True
-                print(f"✓ Accelerometer initialized via multiplexer (channel {ACCEL_CHANNEL})")
+                print(f"[EMOJI] Accelerometer initialized via multiplexer (channel {ACCEL_CHANNEL})")
             except Exception as e:
-                print(f"✗ Accelerometer initialization failed (multiplexer): {e}")
+                print(f"[EMOJI] Accelerometer initialization failed (multiplexer): {e}")
                 self.accel_available = False
         else:
             # Standalone accelerometer - direct access
@@ -61,9 +61,9 @@ class SensorHub:
                 accelerometer.wake()
                 time.sleep(0.1)
                 self.accel_available = True
-                print("✓ Accelerometer initialized (direct access)")
+                print("[EMOJI] Accelerometer initialized (direct access)")
             except Exception as e:
-                print(f"✗ Accelerometer initialization failed: {e}")
+                print(f"[EMOJI] Accelerometer initialization failed: {e}")
                 self.accel_available = False
         
         # Floor sensor debouncing - track history to avoid false positives
