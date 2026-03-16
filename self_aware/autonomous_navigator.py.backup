@@ -94,7 +94,7 @@ class AutonomousNavigator:
     
     def announce(self, message):
         """Announce status via TTS."""
-        safe_print(f"[EMOJI] {message}")
+        safe_print(f"🔊 {message}")
         try:
             self.tts.say(message)
         except Exception as e:
@@ -105,7 +105,7 @@ class AutonomousNavigator:
         if new_state != self.state:
             self.previous_state = self.state
             self.state = new_state
-            safe_print(f"State: {self.previous_state.value} -> {new_state.value}")
+            safe_print(f"State: {self.previous_state.value} → {new_state.value}")
     
     # ========================================================================
     # BALANCE MANAGEMENT
@@ -125,7 +125,7 @@ class AutonomousNavigator:
             
             pose = compute_balance_pose(pitch, roll)
             self.crawler.do_step(pose, BALANCE_SPEED)
-            safe_print(f"{ICONS['tilt']} Balance: pitch={pitch:+.1f} deg roll={roll:+.1f} deg")
+            safe_print(f"{ICONS['tilt']} Balance: pitch={pitch:+.1f}° roll={roll:+.1f}°")
         except Exception as e:
             safe_print(f"Balance error: {e}")
     
@@ -141,7 +141,7 @@ class AutonomousNavigator:
             self.motion.set_target_speed(SPEED_MIN)
             if self.state not in [RobotState.EMERGENCY, RobotState.TILT_CORRECTION]:
                 self.change_state(RobotState.TILT_CORRECTION)
-                safe_print(f"{ICONS['warning']} Danger tilt: {max_tilt:.1f} deg")
+                safe_print(f"{ICONS['warning']} Danger tilt: {max_tilt:.1f}°")
         
         elif max_tilt > TILT_CAUTION:
             self.motion.set_target_speed(SPEED_CAUTION)
@@ -309,7 +309,7 @@ class AutonomousNavigator:
         safe_print(f"  Floor dangers: {stuck_status['consecutive_floor_dangers']}")
         
         if self.sensors.has_accelerometer():
-            safe_print(f"  Tilt: pitch={pitch:+.1f} deg roll={roll:+.1f} deg")
+            safe_print(f"  Tilt: pitch={pitch:+.1f}° roll={roll:+.1f}°")
         
         safe_print("=" * 30 + "\n")
     
