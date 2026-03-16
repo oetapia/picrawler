@@ -77,6 +77,10 @@ class AutonomousNavigator:
         self.running = False
         self.stop_event = Event()
         
+        # Movement tracking for balance timing
+        self.last_movement_time = 0
+        self.last_movement_type = None
+        
         # Statistics
         self.total_steps = 0
         self.start_time = time.time()
@@ -114,6 +118,12 @@ class AutonomousNavigator:
     def apply_balance(self):
         """Apply dynamic balance correction based on tilt."""
         if not self.sensors.has_accelerometer():
+            return
+        
+        # CRITICAL FIX: Skip balance if movement was very recent
+        # This prevents awkward "backward shuffle" after forward movement
+        time_since_movement = time.time() - self.last_movement_time
+        if time_since_movement < 0.2:  # 200ms settling time
             return
         
         try:
@@ -163,6 +173,11 @@ class AutonomousNavigator:
         speed = self.motion.update()
         safe_print(f"{ICONS['forward']} Forward (speed={speed})")
         self.crawler.do_action('forward', 1, speed)
+        
+        # Track movement for balance timing
+        self.last_movement_time = time.time()
+        self.last_movement_type = 'forward'
+        
         self.stuck_detector.record_successful_move()
         self.total_steps += 1
     
@@ -388,9 +403,12 @@ class AutonomousNavigator:
         safe_print(f"  Final state: {self.state.value}")
         safe_print("=" * 40)
         
-        # Return to neutral stance
-        neutral_pose = get_neutral_pose()
-        self.crawler.do_step(neutral_pose, 40)
+        # Return to compact pose for safe pickup
+        safe_print(f"\n{ICONS['robot']} Moving to compact pose for safe pickup...")
+        compact_pose = get_compact_pose()
+        self.crawler.do_step(compact_pose, 40)
+        time.sleep(0.5)  # Give time to settle
+        safe_print(f"{ICONS['check']} Robot ready for pickup")
         
         # Close sensors
         self.sensors.close()

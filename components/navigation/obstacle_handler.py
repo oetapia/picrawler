@@ -107,9 +107,9 @@ class ObstacleHandler:
         # Handle edge dangers
         if danger_type == 'front_edge':
             action['action'] = 'backward'
-            action['steps'] = 2
+            action['steps'] = 3  # Increased from 2 for better safety
             action['secondary_action'] = random.choice(['turn left', 'turn right'])
-            action['secondary_steps'] = 2
+            action['secondary_steps'] = 1  # Reduced from 2 to minimize leg extension
         
         elif danger_type == 'back_edge':
             # Only move forward if distance sensor says it's safe
@@ -122,21 +122,28 @@ class ObstacleHandler:
                 action['steps'] = 4
         
         elif danger_type == 'left_edge':
-            action['action'] = 'turn right'
+            action['action'] = 'backward'
             action['steps'] = 2
+            action['secondary_action'] = 'turn right'
+            action['secondary_steps'] = 1
         
         elif danger_type == 'right_edge':
-            action['action'] = 'turn left'
+            action['action'] = 'backward'
             action['steps'] = 2
+            action['secondary_action'] = 'turn left'
+            action['secondary_steps'] = 1
         
         elif danger_type.startswith('corner_'):
-            # Corner dangers
+            # CRITICAL FIX: Back up BEFORE turning even for corners
+            # This prevents more legs from extending over the edge
+            action['action'] = 'backward'
+            action['steps'] = 2
             corner_pos = danger_type.split('_')[1]  # fl, fr, bl, br
             if corner_pos in ['fl', 'bl']:
-                action['action'] = 'turn right'
+                action['secondary_action'] = 'turn right'
             else:
-                action['action'] = 'turn left'
-            action['steps'] = 2
+                action['secondary_action'] = 'turn left'
+            action['secondary_steps'] = 1  # Minimal turn to avoid extending legs
         
         return action
     

@@ -807,9 +807,11 @@ class EnhancedPiCrawler:
         safe_print(f"  Final state: {self.state.value}")
         safe_print("=" * 40)
         
-        # Return to neutral stance
-        neutral_pose = [list(LEG_NEUTRAL)] * 4
-        self.crawler.do_step(neutral_pose, 40)
+        # Return to compact pose for safe pickup
+        safe_print(f"\n{ICONS['robot']} Moving to compact pose for safe pickup...")
+        self.crawler.do_step(compact, 40)
+        time.sleep(0.5)  # Give time to settle
+        safe_print(f"{ICONS['check']} Robot ready for pickup")
         
         # Close ToF sensors
         if self.front_tof:
