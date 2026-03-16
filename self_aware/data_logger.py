@@ -64,8 +64,8 @@ class DataLogger:
         if self.format == "csv":
             self._init_csv()
         
-        print(f"📝 Data logger initialized: {self.log_file}")
-        print(f"   Format: {self.format.upper()}, Buffer: {buffer_size}, Rate: 10 Hz")
+        print(f" Data logger initialized: {self.log_file}")
+        print(f" Format: {self.format.upper()}, Buffer: {buffer_size}, Rate: 10 Hz")
     
     def _init_csv(self):
         """Initialize CSV file with headers."""
