@@ -360,7 +360,7 @@ def main():
     
     # Get stats
     stats = throttled.get_stats()
-    print(f"\n✓ Logging complete!")
+    print(f" Logging complete!")
     print(f"  Entries: {stats['entries_logged']}")
     print(f"  Rate: {stats['rate']:.1f} Hz")
     print(f"  File: {stats['file_path']}")
