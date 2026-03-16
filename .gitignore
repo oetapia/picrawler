@@ -1,5 +1,41 @@
+# IDE
 .vscode/*
 .env
+
+# Python
 __pycache__/
-venv
+*.pyc
+*.pyo
+*.pyd
+venv/
+env/
+*.egg-info/
+
+# macOS
 .DS_Store
+
+# Jupyter Notebooks (dev branch only)
+*.ipynb_checkpoints/
+.ipynb_checkpoints/
+
+# ML Development (dev branch only)
+self_aware/logs/*.csv
+self_aware/datasets/
+*.h5
+*.pkl
+*.model
+*.joblib
+
+# Large files
+*.mp4
+*.avi
+*.tar.gz
+*.zip
+
+# Backup files (should stay in dev, not in production)
+*.backup
+
+# Build artifacts
+build/
+dist/
+*.egg-info/

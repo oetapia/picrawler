@@ -1,0 +1,1 @@
+timestamp,front_distance_cm,rear_distance_cm,pitch,roll,accel_x,accel_y,accel_z,gyro_x,gyro_y,gyro_z,floor_fl,floor_fr,floor_bl,floor_br,state,previous_state,current_speed,consecutive_obstacles,consecutive_floor_dangers,stuck_counter,action,action_steps,action_speed,tilt_magnitude,floor_danger_count
