@@ -56,6 +56,9 @@ git branch --show-current
 # Edit files, test, iterate
 code components/sensors/new_feature.py
 
+# ⚠️ IMPORTANT: Fix encoding for robot compatibility
+python3 tools/fix_encoding.py components/sensors/new_feature.py
+
 # Test with diagnostic tools
 python3 components/sensors/sensor_diagnostic.py
 
@@ -63,10 +66,12 @@ python3 components/sensors/sensor_diagnostic.py
 python3 components/sensors/accelerometer.py
 ```
 
+**Note:** Always run `fix_encoding.py` on Python files destined for the robot to ensure ASCII-only encoding.
+
 ### 3. Commit to Dev
 
 ```bash
-# Stage changes
+# Stage changes (pre-commit hook will auto-fix encoding)
 git add components/sensors/new_feature.py
 
 # Commit with descriptive message
@@ -75,6 +80,8 @@ git commit -m "Add new sensor feature: [description]"
 # Push to dev branch
 git push origin dev
 ```
+
+**Note:** The pre-commit hook automatically runs `fix_encoding.py` on staged Python files.
 
 ### 4. When Ready for Production
 
@@ -88,6 +95,48 @@ python3 tools/pass_to_prod.py --file components/sensors/new_feature.py
 # Or entire module
 python3 tools/pass_to_prod.py --module components/sensors
 ```
+
+---
+
+## 🔧 Encoding Management
+
+### Why Encoding Matters
+
+The Raspberry Pi robot cannot handle Unicode characters. All Python files must use ASCII-only encoding to prevent `charmap codec` errors.
+
+### Tools Available
+
+```bash
+# Check encoding issues (dry-run)
+make encoding-check
+
+# Fix encoding issues
+make encoding-fix
+
+# Or use the script directly
+python3 tools/fix_encoding.py components/sensors/new_file.py
+
+# Fix entire directory
+python3 tools/fix_encoding.py components/
+```
+
+### Automatic Fixes
+
+The pre-commit git hook automatically:
+- Checks all staged Python files for encoding issues
+- Fixes Unicode characters automatically
+- Re-stages the fixed files
+- Continues with the commit
+
+### What Gets Fixed
+
+- **Smart quotes** `" "` → `" "`
+- **Emojis** `✅ ❌` → `[EMOJI]`
+- **Special symbols** `→` → `->`
+- **Bullets** `•` → `*`
+- **Degree symbols** `°` → ` deg`
+
+See **AI_CODING_GUIDELINES.md** for complete details.
 
 ---
 
@@ -216,22 +265,28 @@ git checkout dev
 
 # 2. Create and test sensor
 code components/sensors/new_sensor.py
-python3 components/sensors/new_sensor.py  # Test it
 
-# 3. Create diagnostic tool
+# 3. Fix encoding (IMPORTANT for robot!)
+python3 tools/fix_encoding.py components/sensors/new_sensor.py
+
+# 4. Test sensor
+python3 components/sensors/new_sensor.py
+
+# 5. Create diagnostic tool
 code components/sensors/new_sensor_diagnostic.py
+python3 tools/fix_encoding.py components/sensors/new_sensor_diagnostic.py
 python3 components/sensors/new_sensor_diagnostic.py  # Test diagnostic
 
-# 4. Commit to dev
+# 6. Commit to dev (pre-commit hook will double-check encoding)
 git add components/sensors/new_sensor.py
 git add components/sensors/new_sensor_diagnostic.py
 git commit -m "Add new sensor with diagnostic"
 git push origin dev
 
-# 5. Migrate only production file to v3.0
+# 7. Migrate only production file to v3.0
 python3 tools/pass_to_prod.py --file components/sensors/new_sensor.py
 
-# 6. Push v3.0 (after migration tool switches back to dev)
+# 8. Push v3.0 (after migration tool switches back to dev)
 git checkout v3.0
 git push origin v3.0
 git checkout dev
@@ -397,6 +452,7 @@ find . -name "*_GUIDE.md" | wc -l
 
 ### DO:
 ✅ **Always develop on dev branch**  
+✅ **Run fix_encoding.py on all Python files for robot**  
 ✅ **Test with diagnostic tools before migrating**  
 ✅ **Use pass_to_prod.py for migrations**  
 ✅ **Preview with --dry-run first**  
@@ -409,7 +465,8 @@ find . -name "*_GUIDE.md" | wc -l
 ❌ **Never manually copy files between branches**  
 ❌ **Never commit diagnostic files to v3.0**  
 ❌ **Never deploy dev branch to robot**  
-❌ **Never skip testing before migration**
+❌ **Never skip testing before migration**  
+❌ **Never commit Unicode characters to robot code**
 
 ---
 
@@ -510,10 +567,12 @@ python3 tools/pass_to_prod.py --dry-run --module components/sensors
 
 ## 📚 Related Documentation
 
+- **AI_CODING_GUIDELINES.md** - Critical encoding requirements for AI assistants
 - **DIAGNOSTIC_TOOLS.md** - Complete diagnostic tools inventory
 - **PRODUCTION_SETUP_V3.md** - Production deployment guide
 - **CUSTOM_MODULES_MANIFEST.md** - Complete file inventory
 - **V4_MIGRATION_GUIDE.md** - Future migration template
+- **tools/fix_encoding.py** - Encoding fix script source
 
 ---
 
@@ -560,10 +619,16 @@ git checkout dev              # Switch to development
 git checkout v3.0             # Switch to production
 git branch --show-current     # Check current branch
 
+# Encoding Management (NEW!)
+make encoding-check           # Check for encoding issues
+make encoding-fix             # Fix encoding issues
+python3 tools/fix_encoding.py components/  # Fix specific directory
+make clean                    # Remove backup files
+
 # Development
 python3 components/sensors/[sensor]_diagnostic.py  # Test sensor
 git add .                     # Stage changes
-git commit -m "Message"       # Commit
+git commit -m "Message"       # Commit (auto-fixes encoding)
 git push origin dev           # Push to dev
 
 # Migration
