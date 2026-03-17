@@ -43,13 +43,13 @@ def get_icon(emoji, fallback):
 
 # Icon dictionary for consistent use across the application
 ICONS = {
-    'robot': get_icon('🤖', '[ROBOT]'),
-    'forward': get_icon('➡️', '[FWD]'),
-    'warning': get_icon('⚠️', '[WARN]'),
-    'obstacle': get_icon('🚧', '[OBS]'),
-    'tilt': get_icon('📐', '[TILT]'),
-    'scan': get_icon('🔍', '[SCAN]'),
-    'check': get_icon('✅', '[OK]'),
-    'stop': get_icon('🛑', '[STOP]'),
-    'stats': get_icon('📊', '[STATS]'),
+    'robot': get_icon('[EMOJI]', '[ROBOT]'),
+    'forward': get_icon('[EMOJI]', '[FWD]'),
+    'warning': get_icon('[EMOJI]', '[WARN]'),
+    'obstacle': get_icon('[EMOJI]', '[OBS]'),
+    'tilt': get_icon('[EMOJI]', '[TILT]'),
+    'scan': get_icon('[EMOJI]', '[SCAN]'),
+    'check': get_icon('[EMOJI]', '[OK]'),
+    'stop': get_icon('[EMOJI]', '[STOP]'),
+    'stats': get_icon('[EMOJI]', '[STATS]'),
 }

@@ -362,21 +362,21 @@ def main():
     print("=" * 60)
     
     if main_bus_ok:
-        print("[OK] ✓ OLED working on MAIN I2C BUS")
+        print("[OK] [EMOJI] OLED working on MAIN I2C BUS")
         print("     Your OLED is connected directly to the Pi's I2C pins")
         print("     It is NOT behind a multiplexer")
     elif mux_ok:
-        print("[OK] ✓ OLED working through MULTIPLEXER")
+        print("[OK] [EMOJI] OLED working through MULTIPLEXER")
         print("     Update your code to select the correct multiplexer channel")
     else:
-        print("[X] ✗ OLED NOT DETECTED")
+        print("[X] [EMOJI] OLED NOT DETECTED")
         print("\nPossible issues:")
-        print("  • Wiring problem (check SDA, SCL, VCC, GND)")
-        print("  • Wrong I2C address (try 0x3C and 0x3D)")
-        print("  • Wrong display resolution (try 128x64 and 128x32)")
-        print("  • Incompatible OLED chip (needs SSD1306)")
-        print("  • I2C bus speed issue (try adding dtparam=i2c_arm_baudrate=50000)")
-        print("  • Power issue (some OLEDs need 5V, most need 3.3V)")
+        print("  * Wiring problem (check SDA, SCL, VCC, GND)")
+        print("  * Wrong I2C address (try 0x3C and 0x3D)")
+        print("  * Wrong display resolution (try 128x64 and 128x32)")
+        print("  * Incompatible OLED chip (needs SSD1306)")
+        print("  * I2C bus speed issue (try adding dtparam=i2c_arm_baudrate=50000)")
+        print("  * Power issue (some OLEDs need 5V, most need 3.3V)")
     
     print("=" * 60)
     return 0 if (main_bus_ok or mux_ok) else 1

@@ -336,7 +336,7 @@ def initialize_sensors(mux):
             # Test read
             pitch, roll = accelerometer.get_tilt()
             sensors['accelerometer'] = True
-            print(f"  [OK] Accelerometer initialized (pitch={pitch:.1f}°, roll={roll:.1f}°)")
+            print(f"  [OK] Accelerometer initialized (pitch={pitch:.1f} deg, roll={roll:.1f} deg)")
         except Exception as e:
             print(f"  [X] Accelerometer initialization failed: {e}")
     else:
@@ -424,8 +424,8 @@ def live_data_loop(mux, sensors):
                     ax, ay, az = accelerometer.read_accel()
                     
                     print(f"Accelerometer (Channel {ACCEL_CHANNEL}, SD{ACCEL_CHANNEL}):")
-                    print(f"  Pitch:       {pitch:+7.2f}°")
-                    print(f"  Roll:        {roll:+7.2f}°")
+                    print(f"  Pitch:       {pitch:+7.2f} deg")
+                    print(f"  Roll:        {roll:+7.2f} deg")
                     print(f"  Accel X:     {ax:+7.3f}g")
                     print(f"  Accel Y:     {ay:+7.3f}g")
                     print(f"  Accel Z:     {az:+7.3f}g")
