@@ -78,17 +78,17 @@ class DiagnosticRegistry:
             },
             'battery': {
                 'name': 'Battery Monitor',
-                'module': None,  # To be created
+                'module': 'components.sensors.battery_diagnostic',
                 'category': 'sensors',
-                'available': False,
-                'description': 'Test battery voltage monitoring (COMING SOON)'
+                'available': self._check_file_exists('components/sensors/battery_diagnostic.py'),
+                'description': 'Test battery voltage monitoring and thresholds'
             },
             'fusion': {
                 'name': 'Sensor Fusion Test',
-                'module': None,  # To be created
+                'module': 'components.sensors.sensor_fusion_diagnostic',
                 'category': 'sensors',
-                'available': False,
-                'description': 'Test multi-sensor integration (COMING SOON)'
+                'available': self._check_file_exists('components/sensors/sensor_fusion_diagnostic.py'),
+                'description': 'Test multi-sensor integration and data synchronization'
             },
             
             # DISPLAYS
@@ -112,54 +112,54 @@ class DiagnosticRegistry:
             # MOTION & CONTROL
             'motion': {
                 'name': 'Motion Controller',
-                'module': None,  # To be created
+                'module': 'components.navigation.motion_diagnostic',
                 'category': 'motion',
-                'available': False,
-                'description': 'Test motion controller and transitions (COMING SOON)'
+                'available': self._check_file_exists('components/navigation/motion_diagnostic.py'),
+                'description': 'Test motion controller state machine and movements'
             },
             'balance': {
                 'name': 'Balance System',
-                'module': None,  # To be created
+                'module': 'components.navigation.balance_diagnostic',
                 'category': 'motion',
-                'available': False,
-                'description': 'Test balance pose calculation (COMING SOON)'
+                'available': self._check_file_exists('components/navigation/balance_diagnostic.py'),
+                'description': 'Test balance pose calculation and tilt compensation'
             },
             'obstacle': {
                 'name': 'Obstacle Handler',
-                'module': None,  # To be created
+                'module': 'components.navigation.obstacle_diagnostic',
                 'category': 'motion',
-                'available': False,
-                'description': 'Test obstacle avoidance logic (COMING SOON)'
+                'available': self._check_file_exists('components/navigation/obstacle_diagnostic.py'),
+                'description': 'Test obstacle detection and avoidance strategies'
             },
             'recovery': {
                 'name': 'Recovery System',
-                'module': None,  # To be created
+                'module': 'components.navigation_state.recovery_diagnostic',
                 'category': 'motion',
-                'available': False,
-                'description': 'Test stuck detection and recovery (COMING SOON)'
+                'available': self._check_file_exists('components/navigation_state/recovery_diagnostic.py'),
+                'description': 'Test stuck detection and recovery strategies'
             },
             
             # PERIPHERALS
             'sound': {
                 'name': 'Sound System',
-                'module': None,  # To be created
+                'module': 'components.sounds.sound_diagnostic',
                 'category': 'peripherals',
-                'available': False,
-                'description': 'Test audio playback and TTS (COMING SOON)'
+                'available': self._check_file_exists('components/sounds/sound_diagnostic.py'),
+                'description': 'Test audio playback and text-to-speech'
             },
             'ps4': {
                 'name': 'PS4 Controller',
-                'module': None,  # To be created
+                'module': 'components.sensors.ps4_diagnostic',
                 'category': 'peripherals',
-                'available': False,
-                'description': 'Test PS4 controller pairing (COMING SOON)'
+                'available': self._check_file_exists('components/sensors/ps4_diagnostic.py'),
+                'description': 'Test PS4 controller pairing and inputs'
             },
             'server': {
                 'name': 'Web Server API',
-                'module': None,  # To be created
+                'module': 'components.server.server_diagnostic',
                 'category': 'peripherals',
-                'available': False,
-                'description': 'Test Flask REST API endpoints (COMING SOON)'
+                'available': self._check_file_exists('components/server/server_diagnostic.py'),
+                'description': 'Test Flask REST API and WebSocket communication'
             },
         }
     
