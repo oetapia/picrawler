@@ -78,6 +78,8 @@ class AutonomousNavigator:
         # Statistics for floor vs obstacle tracking
         self.floor_readings_filtered = 0
         self.obstacle_readings_triggered = 0
+        self.rear_floor_readings_filtered = 0
+        self.rear_obstacle_readings_triggered = 0
         
         # State management
         self.state = RobotState.EXPLORING
@@ -193,7 +195,10 @@ class AutonomousNavigator:
     
     def execute_obstacle_avoidance(self, distance):
         """
-        Execute obstacle avoidance maneuver.
+        Execute obstacle avoidance maneuver with tilt-aware rear sensor check.
+        
+        Uses tilt-aware rear sensor classification to avoid false obstacle
+        detection when the robot tilts backward during backup maneuvers.
         
         Args:
             distance: Distance to obstacle in cm
@@ -216,7 +221,24 @@ class AutonomousNavigator:
             self.motion.emergency_stop()
             self.announce("Emergency stop!")
         
-        # Execute backward movement
+        # Check rear sensor with tilt-awareness before backing up
+        rear_is_safe, rear_classified = self.sensors.is_backward_safe_tilt_aware(threshold=15.0)
+        
+        if rear_classified.reading_type == ReadingType.FLOOR:
+            # Rear sensor seeing floor (tilted backward) - safe to back up
+            self.rear_floor_readings_filtered += 1
+            safe_print(f"{ICONS['tilt']} Rear floor reading filtered: {rear_classified.distance:.0f}cm @ pitch={rear_classified.pitch:.1f}deg")
+        
+        if not rear_is_safe:
+            # Real obstacle behind - can't back up, just turn in place
+            self.rear_obstacle_readings_triggered += 1
+            safe_print(f"{ICONS['warning']} Rear obstacle at {rear_classified.distance:.0f}cm - turning in place")
+            self.crawler.do_action(action['turn_direction'], action['turn_amount'] + 1, 
+                                  self.motion.get_speed())
+            time.sleep(0.4)
+            return
+        
+        # Execute backward movement (rear is clear or just floor reading)
         self.crawler.do_action('backward', action['backward_steps'], self.motion.get_speed())
         time.sleep(0.4)
         
@@ -362,9 +384,12 @@ class AutonomousNavigator:
         safe_print(f"  Obstacles: {stuck_status['consecutive_obstacles']}")
         safe_print(f"  Floor dangers: {stuck_status['consecutive_floor_dangers']}")
         
-        # Tilt-aware ToF statistics
-        safe_print(f"  Floor readings filtered: {self.floor_readings_filtered}")
-        safe_print(f"  Obstacles triggered: {self.obstacle_readings_triggered}")
+        # Tilt-aware ToF statistics (front sensor)
+        safe_print(f"  Front floor filtered: {self.floor_readings_filtered}")
+        safe_print(f"  Front obstacles: {self.obstacle_readings_triggered}")
+        # Rear sensor statistics
+        safe_print(f"  Rear floor filtered: {self.rear_floor_readings_filtered}")
+        safe_print(f"  Rear obstacles: {self.rear_obstacle_readings_triggered}")
         
         if self.sensors.has_accelerometer():
             safe_print(f"  Tilt: pitch={pitch:+.1f} deg roll={roll:+.1f} deg")
@@ -447,8 +472,10 @@ class AutonomousNavigator:
         safe_print(f"  Runtime: {uptime:.1f}s")
         safe_print(f"  Total steps: {self.total_steps}")
         safe_print(f"  Final state: {self.state.value}")
-        safe_print(f"  Floor readings filtered: {self.floor_readings_filtered}")
-        safe_print(f"  Obstacles triggered: {self.obstacle_readings_triggered}")
+        safe_print(f"  Front floor filtered: {self.floor_readings_filtered}")
+        safe_print(f"  Front obstacles: {self.obstacle_readings_triggered}")
+        safe_print(f"  Rear floor filtered: {self.rear_floor_readings_filtered}")
+        safe_print(f"  Rear obstacles: {self.rear_obstacle_readings_triggered}")
         safe_print("=" * 40)
         
         # Show shutdown on OLED
