@@ -32,6 +32,7 @@ import argparse
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from components.sensors import accelerometer
+from components.sensors.tilt_aware_tof import ReadingType
 from components.utils import safe_print, ICONS
 from components.utils.config import DISTANCE_SENSOR_TYPE
 
@@ -100,13 +101,14 @@ class AutonomousNavigatorWithLogging(AutonomousNavigator):
     # DATA LOGGING
     # ========================================================================
     
-    def log_current_state(self, action='none', steps=0):
+    def log_current_state(self, action='none', steps=0, tof_classification=None):
         """
         Log current sensor readings and action.
         
         Args:
             action: Action being taken
             steps: Number of steps for action
+            tof_classification: Optional ClassifiedReading for tilt-aware ToF data
         """
         if not self.enable_logging or self.logger is None:
             return
@@ -127,6 +129,10 @@ class AutonomousNavigatorWithLogging(AutonomousNavigator):
                 except:
                     pass
             
+            # Get tilt-aware classification if not provided
+            if tof_classification is None and self.sensors.has_distance_sensor():
+                tof_classification = self.sensors.get_classified_distance()
+            
             sensor_data = {
                 'distance': distance,
                 'front_distance': distance,  # For photo logger compatibility
@@ -142,6 +148,10 @@ class AutonomousNavigatorWithLogging(AutonomousNavigator):
                 'floor_fr': floor_sensors['fr'],
                 'floor_bl': floor_sensors['bl'],
                 'floor_br': floor_sensors['br'],
+                # Tilt-aware ToF classification data
+                'tof_reading_type': tof_classification.reading_type.value if tof_classification else 'unknown',
+                'tof_confidence': tof_classification.confidence if tof_classification else 0.0,
+                'tof_expected_floor_dist': tof_classification.expected_floor_dist if tof_classification else 0.0,
             }
             
             # Gather context data
@@ -153,6 +163,9 @@ class AutonomousNavigatorWithLogging(AutonomousNavigator):
                 'consecutive_obstacles': stuck_status['consecutive_obstacles'],
                 'consecutive_floor_dangers': stuck_status['consecutive_floor_dangers'],
                 'stuck_counter': stuck_status['stuck_counter'],
+                # Tilt-aware statistics
+                'floor_readings_filtered': self.floor_readings_filtered,
+                'obstacle_readings_triggered': self.obstacle_readings_triggered,
             }
             
             # Gather action data
@@ -170,6 +183,32 @@ class AutonomousNavigatorWithLogging(AutonomousNavigator):
             
         except Exception as e:
             safe_print(f"Logging error: {e}")
+    
+    def log_floor_reading_filtered(self, classified):
+        """
+        Log when a floor reading is filtered (not treated as obstacle).
+        
+        Args:
+            classified: ClassifiedReading from tilt-aware ToF
+        """
+        self.log_current_state(
+            action='floor_filtered',
+            steps=0,
+            tof_classification=classified
+        )
+    
+    def log_obstacle_triggered(self, classified):
+        """
+        Log when a real obstacle triggers avoidance.
+        
+        Args:
+            classified: ClassifiedReading from tilt-aware ToF
+        """
+        self.log_current_state(
+            action='obstacle_detected',
+            steps=0,
+            tof_classification=classified
+        )
     
     # ========================================================================
     # OVERRIDE METHODS TO ADD LOGGING
