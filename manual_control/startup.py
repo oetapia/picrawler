@@ -67,9 +67,9 @@ def button_handler(pin):
     
             elif pin == btn2:
                 print("Button 2 pressed")
-                tts.say("Starting automated control")
-                oled.update_display(header=f"Starting...", text=f'Autopilot tracking')
-                run_script('/home/pi/picrawler/manual_control/scripts/tracking5.py')  # Run script 2
+                tts.say("Starting autonomous navigation")
+                oled.update_display(header=f"Starting...", text=f'Autonomous Nav')
+                run_script('/home/pi/picrawler/self_aware/autonomous_navigator.py')  # Run autonomous navigation
 
             service_started = True
 
