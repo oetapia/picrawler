@@ -17,7 +17,8 @@ from .tilt_aware_tof import (
     ReadingType, 
     ClassifiedReading, 
     TiltAwareConfig,
-    classify_distance_reading, 
+    classify_distance_reading,
+    classify_rear_distance_reading,
     calculate_expected_floor_distance,
     should_trigger_obstacle_avoidance,
     get_display_text
@@ -34,6 +35,7 @@ __all__ = [
     'ClassifiedReading',
     'TiltAwareConfig',
     'classify_distance_reading',
+    'classify_rear_distance_reading',
     'calculate_expected_floor_distance',
     'should_trigger_obstacle_avoidance',
     'get_display_text',
