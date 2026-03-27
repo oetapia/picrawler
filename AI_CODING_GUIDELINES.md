@@ -445,7 +445,82 @@ python3 tools/fix_encoding.py <file_or_directory>
 
 ---
 
-**Last Updated:** March 17, 2026  
+---
+
+## 🚀 SKILL: Deploy to Production
+
+### **When to Use This Skill**
+After completing any code changes on `dev` branch, invoke this skill to deploy to `v3.0` production.
+
+### **Invocation**
+When you've finished making changes, ask the user:
+
+> "Would you like me to deploy these changes to production (v3.0)?"
+
+If user says YES, execute the deployment workflow below.
+
+### **Deployment Workflow**
+
+```bash
+# 1. Verify on dev branch
+git branch --show-current  # Must show: dev
+
+# 2. Deploy single file to production
+echo "yes" | python3 tools/pass_to_prod.py --file <path/to/file.py>
+
+# 3. Deploy multiple files (run one at a time)
+echo "yes" | python3 tools/pass_to_prod.py --file components/sensors/file1.py
+echo "yes" | python3 tools/pass_to_prod.py --file components/sensors/file2.py
+
+# 4. Deploy entire module
+echo "yes" | python3 tools/pass_to_prod.py --module components/sensors
+
+# 5. After deployment, remind user to push
+# "Remember to push: git push origin v3.0"
+```
+
+### **What pass_to_prod.py Does**
+1. Stashes any uncommitted changes on dev
+2. Switches to v3.0 branch
+3. Copies the file(s) from dev
+4. Runs fix_encoding.py automatically
+5. Commits to v3.0
+6. Switches back to dev
+7. Restores stashed changes
+
+### **Standard Task Completion Pattern**
+
+```markdown
+## ✅ Task Complete
+
+Changes made on `dev` branch:
+- file1.py - description
+- file2.py - description
+
+**Would you like me to deploy these changes to production (v3.0)?**
+```
+
+If user confirms, run:
+```bash
+echo "yes" | python3 tools/pass_to_prod.py --file <file>
+```
+
+Then remind:
+```markdown
+✅ Deployed to v3.0
+Remember to push: `git push origin v3.0`
+```
+
+### **Files That Should NOT Be Deployed**
+- `*_diagnostic.py` - Dev-only diagnostic tools
+- `test_*.py` - Test files
+- `AI_CODING_GUIDELINES.md` - Dev documentation
+- `DEV_WORKFLOW.md` - Dev documentation
+- Files in `tools/` directory
+
+---
+
+**Last Updated:** March 27, 2026  
 **For:** AI Assistants working on PiCrawler project  
 **Priority:** 🔴 **CRITICAL** - Encoding fixes are mandatory for robot deployment
 
