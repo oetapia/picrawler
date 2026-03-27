@@ -41,12 +41,18 @@ class TiltAwareConfig:
     """Configuration for tilt-aware distance sensing."""
     
     # Sensor mounting geometry (adjust for your robot)
-    SENSOR_HEIGHT_CM = 8.0        # Height of ToF sensor from ground when level
-    SENSOR_FORWARD_OFFSET = 5.0   # How far forward the sensor is mounted
+    FRONT_SENSOR_HEIGHT_CM = 8.0   # Height of front ToF sensor from ground when level
+    REAR_SENSOR_HEIGHT_CM = 8.0    # Height of rear ToF sensor from ground when level
+    SENSOR_HEIGHT_CM = 8.0         # Default (for backward compatibility)
+    SENSOR_FORWARD_OFFSET = 5.0    # How far forward the sensor is mounted
     
-    # Pitch thresholds
+    # Pitch thresholds for FRONT sensor (positive pitch = tilted forward)
     PITCH_FLOOR_RISK_MIN = 8.0    # deg - below this, unlikely to see floor
     PITCH_FLOOR_RISK_MAX = 35.0   # deg - above this, definitely seeing floor
+    
+    # Pitch thresholds for REAR sensor (negative pitch = tilted backward)
+    REAR_PITCH_FLOOR_RISK_MIN = -8.0   # deg - above this (less negative), unlikely to see floor
+    REAR_PITCH_FLOOR_RISK_MAX = -35.0  # deg - below this, definitely seeing floor
     
     # Distance thresholds
     FLOOR_DISTANCE_MIN = 10.0     # cm - floor can't be closer than this
@@ -247,12 +253,141 @@ def should_trigger_obstacle_avoidance(classified: ClassifiedReading,
     return False
 
 
-def get_display_text(classified: ClassifiedReading) -> Tuple[str, str]:
+def classify_rear_distance_reading(distance: float, 
+                                    pitch: float, 
+                                    roll: float = 0.0,
+                                    config: TiltAwareConfig = None) -> ClassifiedReading:
+    """
+    Classify a REAR distance reading as obstacle, floor, or clear.
+    
+    The rear sensor sees the floor when tilted BACKWARD (negative pitch).
+    Uses pitch angle to determine if the rear ToF sensor is seeing
+    the floor instead of an actual obstacle behind.
+    
+    Args:
+        distance: Raw distance reading in cm from rear sensor
+        pitch: Current pitch angle in degrees (- = backward tilt)
+        roll: Current roll angle in degrees (for side tilt compensation)
+        config: Optional configuration override
+        
+    Returns:
+        ClassifiedReading with type, confidence, and explanation
+    """
+    if config is None:
+        config = TiltAwareConfig()
+    
+    # For rear sensor, we care about NEGATIVE pitch (tilted backward)
+    # Convert to positive for floor calculation
+    effective_pitch = abs(pitch) if pitch < 0 else 0
+    
+    # Calculate expected floor distance at current pitch
+    expected_floor = calculate_expected_floor_distance(effective_pitch, config.REAR_SENSOR_HEIGHT_CM)
+    
+    # Case 1: Very far reading - definitely clear
+    if distance > config.CLEAR_DISTANCE:
+        return ClassifiedReading(
+            distance=distance,
+            reading_type=ReadingType.CLEAR,
+            confidence=0.95,
+            pitch=pitch,
+            expected_floor_dist=expected_floor,
+            reason="Rear distance beyond obstacle range"
+        )
+    
+    # Case 2: Emergency close - always treat as obstacle
+    if distance < config.OBSTACLE_DISTANCE_MIN:
+        return ClassifiedReading(
+            distance=distance,
+            reading_type=ReadingType.OBSTACLE,
+            confidence=0.99,
+            pitch=pitch,
+            expected_floor_dist=expected_floor,
+            reason="Rear emergency close distance"
+        )
+    
+    # Case 3: Robot is level or tilted FORWARD (not backward) - trust the reading
+    # Rear floor risk only when pitch is negative (tilted backward)
+    if pitch > config.REAR_PITCH_FLOOR_RISK_MIN:  # pitch > -8 means not tilted back much
+        if distance < 25:  # Warning distance for rear
+            return ClassifiedReading(
+                distance=distance,
+                reading_type=ReadingType.OBSTACLE,
+                confidence=0.9,
+                pitch=pitch,
+                expected_floor_dist=expected_floor,
+                reason="Rear short distance while not tilted back - real obstacle"
+            )
+        else:
+            return ClassifiedReading(
+                distance=distance,
+                reading_type=ReadingType.CLEAR,
+                confidence=0.85,
+                pitch=pitch,
+                expected_floor_dist=expected_floor,
+                reason="Rear moderate distance while level"
+            )
+    
+    # Case 4: Robot is tilted BACKWARD - rear sensor might see floor
+    if pitch <= config.REAR_PITCH_FLOOR_RISK_MIN:  # pitch <= -8
+        
+        # Check if distance matches expected floor distance
+        floor_diff = abs(distance - expected_floor)
+        
+        if floor_diff < config.FLOOR_MATCH_TOLERANCE:
+            # Distance matches expected floor!
+            confidence = config.HIGH_CONFIDENCE
+            if floor_diff < 5:
+                confidence = 0.95  # Very close match
+            
+            return ClassifiedReading(
+                distance=distance,
+                reading_type=ReadingType.FLOOR,
+                confidence=confidence,
+                pitch=pitch,
+                expected_floor_dist=expected_floor,
+                reason=f"Rear {distance:.0f}cm matches floor estimate {expected_floor:.0f}cm (pitch={pitch:.1f}deg)"
+            )
+        
+        # Distance doesn't match floor - could be obstacle or uncertain
+        if distance < expected_floor * 0.5:
+            # Much closer than floor - likely real obstacle
+            return ClassifiedReading(
+                distance=distance,
+                reading_type=ReadingType.OBSTACLE,
+                confidence=config.MEDIUM_CONFIDENCE,
+                pitch=pitch,
+                expected_floor_dist=expected_floor,
+                reason=f"Rear {distance:.0f}cm << floor {expected_floor:.0f}cm - likely obstacle"
+            )
+        
+        # Uncertain - could be obstacle at floor level
+        return ClassifiedReading(
+            distance=distance,
+            reading_type=ReadingType.UNCERTAIN,
+            confidence=config.LOW_CONFIDENCE,
+            pitch=pitch,
+            expected_floor_dist=expected_floor,
+            reason=f"Rear tilted reading doesn't clearly match floor or obstacle"
+        )
+    
+    # Default: uncertain
+    return ClassifiedReading(
+        distance=distance,
+        reading_type=ReadingType.UNCERTAIN,
+        confidence=0.5,
+        pitch=pitch,
+        expected_floor_dist=expected_floor,
+        reason="Rear could not classify"
+    )
+
+
+def get_display_text(classified: ClassifiedReading, sensor: str = "front") -> Tuple[str, str]:
     """
     Get display-friendly text for OLED.
     
     Args:
         classified: ClassifiedReading result
+        sensor: "front" or "rear" to prefix the display
         
     Returns:
         Tuple of (type_text, detail_text)
@@ -264,7 +399,8 @@ def get_display_text(classified: ClassifiedReading) -> Tuple[str, str]:
         ReadingType.UNCERTAIN: "CHECKING",
     }
     
-    type_text = type_map.get(classified.reading_type, "UNKNOWN")
+    prefix = "R:" if sensor == "rear" else ""
+    type_text = prefix + type_map.get(classified.reading_type, "UNKNOWN")
     
     if classified.reading_type == ReadingType.FLOOR:
         detail_text = f"{classified.distance:.0f}cm @{classified.pitch:.0f}deg"
