@@ -4,6 +4,41 @@
 
 ---
 
+## 🚨 MANDATORY: Always Work in `dev` Branch
+
+### **RULE #0: NEVER work directly in `v3.0` or any production branch**
+
+**Before making ANY code changes, ALWAYS verify you're on `dev`:**
+
+```bash
+# Check current branch
+git branch --show-current
+
+# If NOT on dev, switch to dev:
+git checkout dev
+```
+
+### Why This Matters:
+- **`dev` branch** = Development work, safe to edit
+- **`v3.0` branch** = Production code deployed to robot
+- **Migration flow**: `dev` → `v3.0` via `pass_to_prod.py`
+
+### Workflow:
+1. ✅ Make all changes on `dev` branch
+2. ✅ Test and commit on `dev`
+3. ✅ Use `pass_to_prod.py` to migrate to `v3.0`
+4. ❌ NEVER edit files directly on `v3.0`
+
+### Recovery if on Wrong Branch:
+```bash
+# If you accidentally made changes on v3.0:
+git stash                    # Save changes
+git checkout dev             # Switch to dev
+git stash pop                # Apply changes to dev
+```
+
+---
+
 ## 🚨 MANDATORY: Encoding Fix Requirement
 
 ### **RULE #1: Always Run fix_encoding.py After Creating/Modifying Python Files**
