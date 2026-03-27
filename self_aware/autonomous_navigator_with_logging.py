@@ -33,6 +33,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from components.sensors import accelerometer
 from components.utils import safe_print, ICONS
+from components.utils.config import DISTANCE_SENSOR_TYPE
 
 # Import base autonomous navigator
 from self_aware.autonomous_navigator import AutonomousNavigator
@@ -51,7 +52,7 @@ class AutonomousNavigatorWithLogging(AutonomousNavigator):
     vision-based path detection models.
     """
     
-    def __init__(self, distance_sensor_type=None, 
+    def __init__(self, distance_sensor_type=DISTANCE_SENSOR_TYPE, 
                  enable_logging=False, log_rate_hz=10, log_dir=None,
                  enable_photos=False, photo_rate_hz=2.0, photo_resolution=(320, 240)):
         """
