@@ -16,7 +16,8 @@ from collections import deque
 from components.sensors.distance_sensor import create_distance_sensor
 from components.sensors import ir_distance, accelerometer
 from components.sensors.tilt_aware_tof import (
-    classify_distance_reading, 
+    classify_distance_reading,
+    classify_rear_distance_reading,
     ClassifiedReading, 
     ReadingType,
     should_trigger_obstacle_avoidance,
@@ -282,3 +283,89 @@ class SensorHub:
         """
         classified = self.get_classified_distance()
         return get_display_text(classified)
+    
+    # ========================================================================
+    # REAR SENSOR TILT-AWARE CLASSIFICATION
+    # ========================================================================
+    
+    def get_classified_rear_distance(self, warning_distance: float = 25.0) -> ClassifiedReading:
+        """
+        Get rear distance reading with tilt-aware classification.
+        
+        Uses pitch angle to determine if the rear ToF sensor is seeing
+        the floor instead of an actual obstacle behind.
+        
+        The rear sensor sees floor when tilted BACKWARD (negative pitch).
+        
+        Args:
+            warning_distance: Distance threshold for obstacle warnings (cm)
+            
+        Returns:
+            ClassifiedReading with distance, type (obstacle/floor/clear), 
+            confidence, and explanation
+        """
+        if not self.has_dual_tof:
+            # No rear sensor available
+            return ClassifiedReading(
+                distance=999.0,
+                reading_type=ReadingType.CLEAR,
+                confidence=0.0,
+                pitch=0.0,
+                reason="No rear sensor available"
+            )
+        
+        distance = self.get_rear_distance()
+        pitch, roll = self.get_tilt()
+        
+        return classify_rear_distance_reading(distance, pitch, roll)
+    
+    def should_avoid_rear_obstacle(self, warning_distance: float = 25.0) -> tuple:
+        """
+        Check if rear obstacle avoidance should be triggered (tilt-aware).
+        
+        Filters out floor readings when robot is tilted backward.
+        Useful when deciding whether it's safe to back up.
+        
+        Args:
+            warning_distance: Distance threshold for warnings (cm)
+            
+        Returns:
+            tuple: (should_avoid: bool, classified_reading: ClassifiedReading)
+        """
+        classified = self.get_classified_rear_distance(warning_distance)
+        should_avoid = should_trigger_obstacle_avoidance(classified, warning_distance)
+        
+        return should_avoid, classified
+    
+    def is_backward_safe_tilt_aware(self, threshold: float = 15.0) -> tuple:
+        """
+        Check if it's safe to move backward using tilt-aware rear sensor.
+        
+        Filters out floor readings that occur when tilted backward.
+        
+        Args:
+            threshold: Minimum safe distance (default 15cm)
+            
+        Returns:
+            tuple: (is_safe: bool, classified_reading: ClassifiedReading)
+        """
+        classified = self.get_classified_rear_distance(threshold)
+        
+        # Safe if clear, floor reading (filtered), or obstacle is far enough
+        is_safe = (
+            classified.reading_type == ReadingType.CLEAR or
+            classified.reading_type == ReadingType.FLOOR or
+            (classified.reading_type == ReadingType.OBSTACLE and classified.distance > threshold)
+        )
+        
+        return is_safe, classified
+    
+    def get_rear_display_info(self) -> tuple:
+        """
+        Get display-friendly text for rear distance reading.
+        
+        Returns:
+            tuple: (type_text, detail_text) for OLED display
+        """
+        classified = self.get_classified_rear_distance()
+        return get_display_text(classified, sensor="rear")
