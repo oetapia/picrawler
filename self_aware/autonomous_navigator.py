@@ -27,6 +27,8 @@ from components.navigation import SmoothMotionController, compute_balance_pose, 
 from components.navigation.balance import get_neutral_pose, get_compact_pose
 from components.navigation_state import RobotState, StuckDetector
 from components.sensors.sensor_fusion import SensorHub
+from components.sensors.tilt_aware_tof import ReadingType
+from components.screens.nav_display import NavDisplay
 from components.utils import safe_print, ICONS
 from components.utils.config import (
     SPEED_NORMAL, SPEED_MIN, SPEED_CAUTION,
@@ -68,6 +70,14 @@ class AutonomousNavigator:
         self.sensors = SensorHub(distance_sensor_type)
         self.obstacle_handler = ObstacleHandler()
         self.stuck_detector = StuckDetector()
+        
+        # Initialize OLED display for navigation status
+        self.nav_display = NavDisplay(update_interval=0.25)
+        self.nav_display.show_startup()
+        
+        # Statistics for floor vs obstacle tracking
+        self.floor_readings_filtered = 0
+        self.obstacle_readings_triggered = 0
         
         # State management
         self.state = RobotState.EXPLORING
@@ -278,25 +288,54 @@ class AutonomousNavigator:
         """
         Check all sensors and handle any detected conditions.
         
+        Uses tilt-aware distance classification to distinguish between
+        floor readings and actual obstacles when the robot is tilted.
+        
         Returns:
             bool: True if action was taken, False if clear to proceed
         """
-        # 1. Check floor sensors (highest priority)
+        # 1. Check floor sensors (highest priority - IR edge detection)
         danger_type, suggested_action = self.sensors.check_floor_danger_debounced()
         if danger_type:
             self.execute_floor_danger_avoidance(danger_type, suggested_action)
             return True
         
-        # 2. Check distance sensor for obstacles
+        # 2. Check distance sensor with tilt-aware classification
         if self.sensors.has_distance_sensor():
-            distance = self.sensors.get_distance()
-            
             # Adjust threshold based on state
             threshold = DISTANCE_SAFE if self.state == RobotState.AVOIDING_OBSTACLE else DISTANCE_WARNING
             
-            if distance < threshold:
-                self.execute_obstacle_avoidance(distance)
+            # Get classified distance reading (filters floor readings when tilted)
+            should_avoid, classified = self.sensors.should_avoid_obstacle(threshold)
+            
+            # Update OLED display with detection info
+            pitch, _ = self.sensors.get_tilt()
+            
+            if classified.reading_type == ReadingType.FLOOR:
+                # Floor reading detected - skip obstacle avoidance
+                self.floor_readings_filtered += 1
+                self.nav_display.show_floor_detected(
+                    classified.distance, 
+                    classified.pitch,
+                    classified.expected_floor_dist or 0
+                )
+                safe_print(f"{ICONS['tilt']} Floor reading filtered: {classified.distance:.0f}cm @ pitch={classified.pitch:.1f} deg (expected floor: {classified.expected_floor_dist:.0f}cm)")
+                # Don't trigger avoidance - continue exploring
+                
+            elif should_avoid:
+                # Real obstacle detected
+                self.obstacle_readings_triggered += 1
+                self.nav_display.show_obstacle_detected(
+                    classified.distance,
+                    classified.pitch,
+                    "AVOID"
+                )
+                self.execute_obstacle_avoidance(classified.distance)
                 return True
+            
+            else:
+                # Clear path
+                self.nav_display.show_clear(classified.distance, pitch)
         
         # 3. Check if stuck
         if self.stuck_detector.is_stuck():
@@ -323,8 +362,15 @@ class AutonomousNavigator:
         safe_print(f"  Obstacles: {stuck_status['consecutive_obstacles']}")
         safe_print(f"  Floor dangers: {stuck_status['consecutive_floor_dangers']}")
         
+        # Tilt-aware ToF statistics
+        safe_print(f"  Floor readings filtered: {self.floor_readings_filtered}")
+        safe_print(f"  Obstacles triggered: {self.obstacle_readings_triggered}")
+        
         if self.sensors.has_accelerometer():
             safe_print(f"  Tilt: pitch={pitch:+.1f} deg roll={roll:+.1f} deg")
+        
+        # Update OLED with status
+        self.nav_display.show_status(self.state.value, f"Steps: {self.total_steps}")
         
         safe_print("=" * 30 + "\n")
     
@@ -401,7 +447,12 @@ class AutonomousNavigator:
         safe_print(f"  Runtime: {uptime:.1f}s")
         safe_print(f"  Total steps: {self.total_steps}")
         safe_print(f"  Final state: {self.state.value}")
+        safe_print(f"  Floor readings filtered: {self.floor_readings_filtered}")
+        safe_print(f"  Obstacles triggered: {self.obstacle_readings_triggered}")
         safe_print("=" * 40)
+        
+        # Show shutdown on OLED
+        self.nav_display.close()
         
         # Return to compact pose for safe pickup
         safe_print(f"\n{ICONS['robot']} Moving to compact pose for safe pickup...")
