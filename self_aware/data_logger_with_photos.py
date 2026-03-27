@@ -8,9 +8,14 @@ Maintains synchronized CSV files linking photos to sensor readings and actions.
 """
 
 import csv
+import os
+import sys
 import time
 from datetime import datetime
 from pathlib import Path
+
+# Add project root to path (same pattern as autonomous_navigator.py)
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from self_aware.data_logger import DataLogger
 from self_aware.photo_logger import PhotoLogger
@@ -100,7 +105,7 @@ class DataLoggerWithPhotos(DataLogger):
             # Initialize photo manifest
             self._init_photo_manifest()
         
-        print(f"📦 Session created: {self.session_dir}")
+        print(f"[EMOJI] Session created: {self.session_dir}")
     
     def _init_photo_manifest(self):
         """Create CSV manifest linking photos to sensor data."""
@@ -256,7 +261,7 @@ class DataLoggerWithPhotos(DataLogger):
         super().close()
         
         # Print combined stats
-        print(f"\n📦 Session Summary")
+        print(f"\n[EMOJI] Session Summary")
         print(f"   Location: {self.session_dir}")
         print(f"   Sensor entries: {self.entries_logged}")
         if self.photo_logger:
@@ -324,7 +329,7 @@ def main():
     # Close
     logger.close()
     
-    print("\n✓ Test complete! Check self_aware/logs/ for output.")
+    print("\n[EMOJI] Test complete! Check self_aware/logs/ for output.")
 
 
 if __name__ == '__main__':
