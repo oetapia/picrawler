@@ -32,17 +32,17 @@ def get_icon(emoji, fallback):
 
 # Define icons with fallbacks
 ICONS = {
-    'spider': get_icon('🕷️', '[SPIDER]'),
-    'robot': get_icon('🤖', '[ROBOT]'), 
-    'check': get_icon('✅', '[OK]'),
-    'error': get_icon('❌', '[ERROR]'),
-    'network': get_icon('🌐', '[NET]'),
-    'link': get_icon('🔗', '[LINK]'),
-    'mobile': get_icon('📱', '[MOBILE]'),
-    'lightning': get_icon('⚡', '[API]'),
-    'gamepad': get_icon('🎮', '[CTRL]'),
-    'stop': get_icon('🛑', '[STOP]'),
-    'recycle': get_icon('🔄', '[CLEAN]')
+    'spider': get_icon('[EMOJI]', '[SPIDER]'),
+    'robot': get_icon('[EMOJI]', '[ROBOT]'), 
+    'check': get_icon('[EMOJI]', '[OK]'),
+    'error': get_icon('[EMOJI]', '[ERROR]'),
+    'network': get_icon('[EMOJI]', '[NET]'),
+    'link': get_icon('[EMOJI]', '[LINK]'),
+    'mobile': get_icon('[EMOJI]', '[MOBILE]'),
+    'lightning': get_icon('[EMOJI]', '[API]'),
+    'gamepad': get_icon('[EMOJI]', '[CTRL]'),
+    'stop': get_icon('[EMOJI]', '[STOP]'),
+    'recycle': get_icon('[EMOJI]', '[CLEAN]')
 }
 
 # Import your existing modules

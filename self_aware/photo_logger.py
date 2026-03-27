@@ -61,7 +61,7 @@ class PhotoLogger:
         self.save_thread = None
         self.running = False
         
-        print(f"📸 Photo logger initialized")
+        print(f"[EMOJI] Photo logger initialized")
         print(f"   Photos dir: {self.photos_dir}")
         print(f"   Resolution: {resolution[0]}x{resolution[1]}")
         print(f"   Capture rate: {capture_rate_hz} Hz")
@@ -80,7 +80,7 @@ class PhotoLogger:
         self.save_thread = threading.Thread(target=self._save_worker, daemon=True)
         self.save_thread.start()
         
-        print("✓ Photo logger camera started")
+        print("[EMOJI] Photo logger camera started")
     
     def capture_if_ready(self, sensor_data=None, label=None):
         """
@@ -134,7 +134,7 @@ class PhotoLogger:
             return metadata
             
         except Exception as e:
-            print(f"✗ Photo capture failed: {e}")
+            print(f"[EMOJI] Photo capture failed: {e}")
             return None
     
     def _save_worker(self):
@@ -153,11 +153,11 @@ class PhotoLogger:
             except queue.Empty:
                 continue
             except Exception as e:
-                print(f"✗ Photo save failed: {e}")
+                print(f"[EMOJI] Photo save failed: {e}")
     
     def stop(self):
         """Stop photo logger and cleanup."""
-        print("\n📸 Stopping photo logger...")
+        print("\n[EMOJI] Stopping photo logger...")
         
         # Stop capture
         self.running = False
@@ -176,7 +176,7 @@ class PhotoLogger:
                 pass
         
         # Stats
-        print(f"✓ Photo logger stopped")
+        print(f"[EMOJI] Photo logger stopped")
         print(f"   Total photos: {self.frame_count}")
         print(f"   Location: {self.photos_dir}")
     
@@ -219,7 +219,7 @@ def main():
     
     # Stats
     stats = logger.get_stats()
-    print(f"\n✓ Capture complete!")
+    print(f"\n[EMOJI] Capture complete!")
     print(f"  Photos: {stats['frames_captured']}")
     print(f"  Queue: {stats['queue_size']} pending")
     

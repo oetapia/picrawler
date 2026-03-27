@@ -52,9 +52,9 @@ class UltrasonicSensor(DistanceSensor):
         try:
             from robot_hat import Ultrasonic
             self.sensor = Ultrasonic(trigger_pin, echo_pin)
-            print(f"✓ {self.sensor_type} initialized on trigger={trigger_pin.id()}, echo={echo_pin.id()}")
+            print(f"[EMOJI] {self.sensor_type} initialized on trigger={trigger_pin.id()}, echo={echo_pin.id()}")
         except Exception as e:
-            print(f"✗ Failed to initialize {self.sensor_type}: {e}")
+            print(f"[EMOJI] Failed to initialize {self.sensor_type}: {e}")
             self.sensor = None
     
     def read(self):
@@ -87,9 +87,9 @@ class VL53L0XSensor(DistanceSensor):
             self.sensor = VL53L0X.VL53L0X(i2c_bus=1, i2c_address=i2c_address)
             self.sensor.open()
             self.sensor.start_ranging(VL53L0X.Vl53l0xAccuracyMode.BETTER)
-            print(f"✓ {self.sensor_type} initialized on I2C address 0x{i2c_address:02X}")
+            print(f"[EMOJI] {self.sensor_type} initialized on I2C address 0x{i2c_address:02X}")
         except Exception as e:
-            print(f"✗ Failed to initialize {self.sensor_type}: {e}")
+            print(f"[EMOJI] Failed to initialize {self.sensor_type}: {e}")
             print("   Install with: pip install VL53L0X")
             self.sensor = None
     
@@ -132,9 +132,9 @@ class VL53L1XSensor(DistanceSensor):
             self.sensor = VL53L1X.VL53L1X(i2c_bus=1, i2c_address=i2c_address)
             self.sensor.open()
             self.sensor.start_ranging(1)  # 1 = short distance mode
-            print(f"✓ {self.sensor_type} initialized on I2C address 0x{i2c_address:02X}")
+            print(f"[EMOJI] {self.sensor_type} initialized on I2C address 0x{i2c_address:02X}")
         except Exception as e:
-            print(f"✗ Failed to initialize {self.sensor_type}: {e}")
+            print(f"[EMOJI] Failed to initialize {self.sensor_type}: {e}")
             print("   Install with: pip install vl53l1x")
             self.sensor = None
     

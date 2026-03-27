@@ -52,7 +52,7 @@ class DataLogger:
             # Set directory permissions to rwxr-xr-x (755)
             os.chmod(self.log_dir, 0o755)
         except PermissionError:
-            print(f"⚠️  Permission denied on {self.log_dir}")
+            print(f"[EMOJI]  Permission denied on {self.log_dir}")
             print(f"   Fix with: sudo chown -R $(whoami) {self.log_dir}")
             raise
         

@@ -29,22 +29,22 @@ def get_icon(emoji, fallback):
 
 
 ICONS = {
-    'robot':     get_icon('🤖', '[ROBOT]'),
-    'spider':    get_icon('🕷️', '[SPIDER]'),
-    'speaker':   get_icon('🔊', '[SPEAKER]'),
-    'warning':   get_icon('⚠️', '[WARNING]'),
-    'obstacle':  get_icon('🚧', '[OBSTACLE]'),
-    'cycle':     get_icon('🔄', '[CYCLE]'),
-    'target':    get_icon('🎯', '[TARGET]'),
-    'search':    get_icon('🔍', '[SEARCH]'),
-    'stop':      get_icon('🛑', '[STOP]'),
-    'check':     get_icon('✅', '[OK]'),
-    'rocket':    get_icon('🚀', '[START]'),
-    'wave':      get_icon('👋', '[WAVE]'),
-    'stats':     get_icon('📊', '[STATS]'),
-    'chart':     get_icon('📈', '[CHART]'),
-    'explosion': get_icon('💥', '[ERROR]'),
-    'camera':    get_icon('📷', '[CAM]'),
+    'robot':     get_icon('[EMOJI]', '[ROBOT]'),
+    'spider':    get_icon('[EMOJI]', '[SPIDER]'),
+    'speaker':   get_icon('[EMOJI]', '[SPEAKER]'),
+    'warning':   get_icon('[EMOJI]', '[WARNING]'),
+    'obstacle':  get_icon('[EMOJI]', '[OBSTACLE]'),
+    'cycle':     get_icon('[EMOJI]', '[CYCLE]'),
+    'target':    get_icon('[EMOJI]', '[TARGET]'),
+    'search':    get_icon('[EMOJI]', '[SEARCH]'),
+    'stop':      get_icon('[EMOJI]', '[STOP]'),
+    'check':     get_icon('[EMOJI]', '[OK]'),
+    'rocket':    get_icon('[EMOJI]', '[START]'),
+    'wave':      get_icon('[EMOJI]', '[WAVE]'),
+    'stats':     get_icon('[EMOJI]', '[STATS]'),
+    'chart':     get_icon('[EMOJI]', '[CHART]'),
+    'explosion': get_icon('[EMOJI]', '[ERROR]'),
+    'camera':    get_icon('[EMOJI]', '[CAM]'),
 }
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
@@ -312,13 +312,13 @@ class ColorTrackingPiCrawler:
         self.search_steps = 0  # reset scan state on detection
 
         if color_x < CENTER_LEFT:
-            safe_print(f"{ICONS['target']} x={color_x} → turn left")
+            safe_print(f"{ICONS['target']} x={color_x} -> turn left")
             self.crawler.do_action('turn left', 1, self.speed)
         elif color_x > CENTER_RIGHT:
-            safe_print(f"{ICONS['target']} x={color_x} → turn right")
+            safe_print(f"{ICONS['target']} x={color_x} -> turn right")
             self.crawler.do_action('turn right', 1, self.speed)
         else:
-            safe_print(f"{ICONS['target']} x={color_x} → forward")
+            safe_print(f"{ICONS['target']} x={color_x} -> forward")
             self.crawler.do_action('forward', 1, self.speed)
             self.last_successful_move = time.time()
             self.total_distance_traveled   += 1
@@ -335,7 +335,7 @@ class ColorTrackingPiCrawler:
             self.search_turn_direction = (
                 'turn left' if self.search_turn_direction == 'turn right' else 'turn right'
             )
-            safe_print(f"{ICONS['search']} Scan direction → {self.search_turn_direction}")
+            safe_print(f"{ICONS['search']} Scan direction -> {self.search_turn_direction}")
 
         self.crawler.do_action(self.search_turn_direction, 1, self.speed // 2)
 

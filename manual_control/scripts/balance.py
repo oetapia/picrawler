@@ -11,8 +11,8 @@ Leg order: [FL, FR, BL, BR]  (0-front-left, 1-front-right,
                                 2-back-left,  3-back-right)
 
 Compensation sign matrix (positive = extend leg to lift that body corner):
-          pitch > 0 (nose down)  →  extend front legs, retract back
-          roll  > 0 (tilt right) →  extend left  legs, retract right
+          pitch > 0 (nose down)  ->  extend front legs, retract back
+          roll  > 0 (tilt right) ->  extend left  legs, retract right
           [FL, FR, BL, BR]
 PITCH:    [+1, +1, -1, -1]
 ROLL:     [+1, -1, +1, -1]
@@ -27,9 +27,9 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')
 from picrawler import Picrawler
 from components.sensors import accelerometer
 
-# ──────────────────────────────────────────────────────────────────────────────
+# [EMOJI]
 # Leg pose reference points  [x, y, z]
-# ──────────────────────────────────────────────────────────────────────────────
+# [EMOJI]
 
 # Fully extended downward: pushes that body corner UP
 EXTENDED  = [60, 45, -75]
@@ -43,9 +43,9 @@ NEUTRAL   = [45, 37, -52]
 # Known-good starting pose (robot tucked, compact)
 RESET_POSE = [[45, 0, 0], [45, 0, 0], [45, 45, 0], [45, 45, 0]]
 
-# ──────────────────────────────────────────────────────────────────────────────
+# [EMOJI]
 # Tuning
-# ──────────────────────────────────────────────────────────────────────────────
+# [EMOJI]
 
 # Tilt angle (degrees) mapped to full extension/retraction
 MAX_TILT  = 25.0
@@ -59,9 +59,9 @@ SPEED = 60
 # Loop period (seconds)
 LOOP_HZ = 0.08   # ~12 Hz
 
-# ──────────────────────────────────────────────────────────────────────────────
+# [EMOJI]
 # Per-leg signs  [FL, FR, BL, BR]
-# ──────────────────────────────────────────────────────────────────────────────
+# [EMOJI]
 PITCH_SIGN = [+1, +1, -1, -1]
 ROLL_SIGN  = [+1, -1, +1, -1]
 
@@ -77,9 +77,9 @@ def compute_pose(pitch, roll):
     pitch and roll angles.
 
     factor per leg ranges from -1.0 (fully retracted) to +1.0 (fully extended):
-      0.0  →  NEUTRAL
-     +1.0  →  EXTENDED
-     -1.0  →  RETRACTED
+      0.0  ->  NEUTRAL
+     +1.0  ->  EXTENDED
+     -1.0  ->  RETRACTED
     """
     pitch_factor = max(-1.0, min(1.0, pitch / MAX_TILT))
     roll_factor  = max(-1.0, min(1.0, roll  / MAX_TILT))
