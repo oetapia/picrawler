@@ -5,6 +5,9 @@ Sensor fusion for unified sensor reading and interpretation.
 
 Provides a centralized interface for reading and combining data from
 multiple sensors (distance, accelerometer, IR floor sensors).
+
+Includes tilt-aware distance classification to distinguish between
+floor readings and actual obstacles.
 """
 
 import time
@@ -12,6 +15,13 @@ from collections import deque
 
 from components.sensors.distance_sensor import create_distance_sensor
 from components.sensors import ir_distance, accelerometer
+from components.sensors.tilt_aware_tof import (
+    classify_distance_reading, 
+    ClassifiedReading, 
+    ReadingType,
+    should_trigger_obstacle_avoidance,
+    get_display_text
+)
 from components.utils.config import DISTANCE_SENSOR_TYPE, DISTANCE_SENSOR_CONFIG
 
 
@@ -222,3 +232,53 @@ class SensorHub:
         status['floor_readings'] = self.get_floor_sensors()
         
         return status
+    
+    # ========================================================================
+    # TILT-AWARE DISTANCE CLASSIFICATION
+    # ========================================================================
+    
+    def get_classified_distance(self, warning_distance: float = 30.0) -> ClassifiedReading:
+        """
+        Get distance reading with tilt-aware classification.
+        
+        Uses pitch angle to determine if the ToF sensor is seeing
+        the floor instead of an actual obstacle.
+        
+        Args:
+            warning_distance: Distance threshold for obstacle warnings (cm)
+            
+        Returns:
+            ClassifiedReading with distance, type (obstacle/floor/clear), 
+            confidence, and explanation
+        """
+        distance = self.get_distance()
+        pitch, roll = self.get_tilt()
+        
+        return classify_distance_reading(distance, pitch, roll)
+    
+    def should_avoid_obstacle(self, warning_distance: float = 30.0) -> tuple:
+        """
+        Check if obstacle avoidance should be triggered (tilt-aware).
+        
+        Filters out floor readings when robot is tilted forward.
+        
+        Args:
+            warning_distance: Distance threshold for warnings (cm)
+            
+        Returns:
+            tuple: (should_avoid: bool, classified_reading: ClassifiedReading)
+        """
+        classified = self.get_classified_distance(warning_distance)
+        should_avoid = should_trigger_obstacle_avoidance(classified, warning_distance)
+        
+        return should_avoid, classified
+    
+    def get_distance_display_info(self) -> tuple:
+        """
+        Get display-friendly text for current distance reading.
+        
+        Returns:
+            tuple: (type_text, detail_text) for OLED display
+        """
+        classified = self.get_classified_distance()
+        return get_display_text(classified)
