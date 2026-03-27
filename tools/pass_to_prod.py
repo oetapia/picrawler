@@ -89,14 +89,19 @@ EXCLUDE_PATTERNS = [
 # Specific files/paths that exist on dev but must NOT go to production.
 # These are checked against the full relative path (from project root).
 DEV_ONLY_FILES = [
-    # ML scaffolding -- dev only
+    # ML scaffolding -- dev only (training infrastructure, not runtime)
     'self_aware/create_ml_notebook.py',
     'self_aware/dataset_utils.py',
     'self_aware/ml_next_move_prediction.ipynb',
     'self_aware/QUICKSTART_ML.md',
     'self_aware/AUTONOMOUS_NAVIGATION.md',
+    'self_aware/README_ML.md',
+    'self_aware/README_PHOTO_DATASETS.md',
 
-    # Tracking test iterations -- superseded by tracking.py (was tracking6.py)
+    # NOTE: photo_logger.py and data_logger_with_photos.py are PRODUCTION files
+    # They enable full sensor + photo capture during autonomous navigation
+
+    # Tracking test iterations -- superseded by tracking.py (consolidated from tracking6.py)
     'manual_control/scripts/tracking2.py',
     'manual_control/scripts/tracking5.py',
     'manual_control/scripts/tracking6.py',
@@ -107,10 +112,17 @@ DEV_ONLY_FILES = [
     # Raw prototype -- superseded by flaskirapi.py using components layer
     'manual_control/scripts/camera_trigger/irflask.py',
 
+    # Diagnostics infrastructure -- dev only (base classes for diagnostic tools)
+    'components/diagnostics/',
+
     # Top-level docs that are dev-only
     'CUSTOM_MODULES_MANIFEST.md',
     'V4_MIGRATION_GUIDE.md',
     'PRODUCTION_SETUP_V3.md',
+    'DEV_WORKFLOW.md',
+    'DIAGNOSTIC_TOOLS.md',
+    'DIAGNOSTIC_TODO.md',
+    'AI_CODING_GUIDELINES.md',
 
     # Tools directory itself is dev-only
     'tools/pass_to_prod.py',

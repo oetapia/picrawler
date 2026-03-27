@@ -110,21 +110,23 @@ Vision system (optional):
 ### Core Files
 - `startup.py` - **⭐ Button-based launcher** (USR/RST buttons)
 - `scripts/keyboard_control.py` - Manual keyboard control
-- `scripts/tracking2.py` - **⭐ Recommended autonomous tracking**
-- `scripts/tracking.py` - Original tracking version
-- `scripts/tracking5.py` - Alternative tracking version
-- `scripts/tracking6.py` - Latest tracking version
+- `scripts/tracking.py` - **⭐ Production tracking** (consolidated from dev iterations)
 - `scripts/balance.py` - Balance testing tool
 - `scripts/restapi3.py` - REST API control (optional)
+
+### Dev-only Files (not in v3.0 production)
+- `scripts/tracking2.py` - Tracking iteration (dev only)
+- `scripts/tracking5.py` - Tracking iteration (dev only)
+- `scripts/tracking6.py` - Tracking iteration (dev only)
 
 ### Web UI (Optional)
 - `client/webui.html` - Browser-based control interface
 - `scripts/camera_trigger/` - Camera trigger scripts
 
 ### Specialty Scripts
-- `scripts/nohat/tracking_nohat2.py` - No-HAT version for testing
+- `scripts/nohat/tracking_nohat2.py` - No-HAT version for testing (dev only)
 
-**Recommended:** Use `tracking2.py` for best performance
+**Recommended:** Use `tracking.py` for best performance
 
 ---
 
@@ -206,7 +208,7 @@ Autonomous mode with sensor data logging
 
 ### 3. **Manual Tracking**
 ```bash
-python3 manual_control/scripts/tracking2.py
+python3 manual_control/scripts/tracking.py
 ```
 Manual control with obstacle avoidance
 

@@ -119,7 +119,7 @@ python3 self_aware/autonomous_navigator_with_logging.py
 
 ### 🎮 Manual Tracking
 ```bash
-python3 manual_control/scripts/tracking2.py
+python3 manual_control/scripts/tracking.py
 ```
 - Manual control with obstacle avoidance
 - Best for testing and debugging
