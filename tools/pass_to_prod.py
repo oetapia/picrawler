@@ -39,7 +39,12 @@ import sys
 import subprocess
 import argparse
 from fnmatch import fnmatch
+from pathlib import Path
 from typing import List, Tuple
+
+# Import encoding fixer (sibling module)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from fix_encoding import fix_encoding as _fix_encoding_file
 
 # ============================================================================
 # PRODUCTION FILE POLICY
@@ -411,6 +416,27 @@ def migrate_files(files: List[str], dry_run: bool = False) -> bool:
             return False
 
         print_success(f"Migrated {migrated} files")
+
+        # Fix encoding on all migrated .py files (prevents charmap codec errors on Pi)
+        print_info("Fixing encoding (emoji -> ASCII) for production...")
+        encoding_fixed = 0
+        for filepath in files:
+            prod_path = RENAME_MAP.get(filepath, filepath)
+            if prod_path.endswith('.py') and os.path.exists(prod_path):
+                success, changes, message = _fix_encoding_file(
+                    Path(prod_path), backup=False, dry_run=False
+                )
+                if success and changes > 0:
+                    encoding_fixed += 1
+                    print(f"    Fixed encoding: {prod_path} ({changes} replacements)")
+        if encoding_fixed > 0:
+            print_success(f"Fixed encoding in {encoding_fixed} file(s)")
+            # Re-stage files after encoding fixes
+            prod_paths_py = [RENAME_MAP.get(f, f) for f in files if RENAME_MAP.get(f, f).endswith('.py')]
+            if prod_paths_py:
+                run_command(['git', 'add'] + prod_paths_py)
+        else:
+            print_info("No encoding issues found")
 
         # Commit
         commit_msg = f"Production update: Migrated {migrated} files from dev\n\nFiles updated:\n"
