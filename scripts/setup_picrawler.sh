@@ -62,24 +62,31 @@ else
     echo "      [WARNING] requirements.txt not found!"
 fi
 
-# Build VL53L0X library from source
-echo "[5/7] Building VL53L0X ToF sensor library..."
+# Ensure correct robot-hat package (CRITICAL: PyPI has two packages with similar names!)
+echo "[5/8] Installing correct robot-hat package (SunFounder)..."
+pip uninstall robot_hat robot-hat -y 2>/dev/null || true
+pip install git+https://github.com/sunfounder/robot-hat.git@v2.0
+echo "      SunFounder robot-hat installed"
+
+# Build VL53L0X library from source (requires sudo for C library)
+echo "[6/8] Building VL53L0X ToF sensor library..."
 VL53L0X_DIR="/tmp/VL53L0X-python"
 if [ -d "$VL53L0X_DIR" ]; then
     rm -rf "$VL53L0X_DIR"
 fi
 git clone https://github.com/pimoroni/VL53L0X-python.git "$VL53L0X_DIR"
 cd "$VL53L0X_DIR"
-python setup.py install
+# Try without sudo first, fall back to sudo if needed
+python setup.py install 2>/dev/null || sudo "$VENV_DIR/bin/python" setup.py install
 echo "      VL53L0X library installed"
 
 # Install project in editable mode
-echo "[6/7] Installing picrawler package (editable mode)..."
+echo "[7/8] Installing picrawler package (editable mode)..."
 cd "$PROJECT_ROOT"
 pip install -e .
 
 # Verify installation
-echo "[7/7] Verifying installation..."
+echo "[8/8] Verifying installation..."
 python -c "import VL53L0X; print('      VL53L0X: OK')" 2>/dev/null || echo "      VL53L0X: FAILED (may need sudo)"
 python -c "from components.sensors import sensor_fusion; print('      components: OK')" 2>/dev/null || echo "      components: FAILED"
 
