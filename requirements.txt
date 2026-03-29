@@ -1,8 +1,10 @@
 # PiCrawler Python Dependencies
 # Install with: pip install -r requirements.txt
 
-# Core robot_hat library (SunFounder)
-robot_hat>=2.0.0
+# Core robot_hat library (SunFounder official package)
+# IMPORTANT: Must use robot-hat (hyphen), NOT robot_hat (underscore)
+# The underscore version is a different package by a different author!
+robot-hat==2.2.13
 
 # Keyboard input handling
 readchar
