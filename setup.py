@@ -64,7 +64,17 @@ setup(
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
-    packages=find_packages(exclude=[ 'doc', 'tests*' ,'examples']),
+    # This includes: picrawler, components.*, manual_control.*, self_aware.*
+    packages=find_packages(exclude=['doc', 'tests*', 'examples', 'tools']),
+
+    # Include non-Python files (sounds, fonts, etc.)
+    package_data={
+        'components.screens': ['*.bin'],  # font5x8.bin
+        'components.sounds.source': ['*.wav'],
+        'components.sounds.glados': ['*.wav'],
+        'components.motion': ['*.json'],  # poses.json
+    },
+    include_package_data=True,
 
     # List run-time dependencies here.  These will be installed by pip when
     # your project is installed. For an analysis of "install_requires" vs pip's

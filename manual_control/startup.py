@@ -9,14 +9,11 @@ from robot_hat import Music, TTS, Pin
 
 
 
-# Add the 'components' directory to sys.path
-# Adjust this path according to the relative location from 'startup.py'
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../components')))
-
-# Import from the 'components.display' package
-from screens import oled
-from sensors import battery_status
-from sounds import library
+# Import from the 'components' package
+# Note: Requires 'pip install -e .' from project root
+from components.screens import oled
+from components.sensors import battery_status
+from components.sounds import library
 
 
 robot_hat_on = False
