@@ -10,15 +10,11 @@ but in a cleaner, more modular structure.
 This serves as a foundation for future ML-based autonomous navigation.
 """
 
-import os
-import sys
 import time
 import random
 from threading import Event
 
-# Add project root to path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
+# Note: Requires 'pip install -e .' from project root for components imports
 from picrawler import Picrawler
 from robot_hat import TTS, utils
 

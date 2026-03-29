@@ -9,10 +9,8 @@ from robot_hat import Music, TTS, Pin
 
 
 
-# Add the project root to sys.path so 'components' is importable
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 # Import from the 'components' package
+# Note: Requires 'pip install -e .' from project root
 from components.screens import oled
 from components.sensors import battery_status
 from components.sounds import library
@@ -79,19 +77,37 @@ def button_handler(pin):
 
 
 def run_script(script_path):
+    """
+    Run a Python script as a subprocess using the project's virtual environment.
+    
+    Uses the same Python interpreter that's running this script (sys.executable),
+    which will be the venv Python when started via systemd or setup scripts.
+    """
     env = os.environ.copy()
-    env['VIRTUAL_ENV'] = '/home/pi/picrawler/examples/myenv'  # Adjust as necessary
-    # Set working directory to project root so imports work correctly
     project_root = '/home/pi/picrawler'
+    venv_path = os.path.join(project_root, 'venv')
+    
+    # Set virtual environment paths
+    env['VIRTUAL_ENV'] = venv_path
+    env['PATH'] = os.path.join(venv_path, 'bin') + ':' + env.get('PATH', '')
+    
+    # Use the same Python that's running this script
+    python_executable = sys.executable
+    
+    print(f"Running: {script_path}")
+    print(f"Python: {python_executable}")
+    
     result = subprocess.run(
-        [sys.executable, script_path], 
+        [python_executable, script_path], 
         env=env, 
-        cwd=project_root,  # Run from project root
+        cwd=project_root,
         check=True, 
         text=True, 
         capture_output=True
     )
     print(f"Executed {script_path} with output: {result.stdout}")
+    if result.stderr:
+        print(f"Stderr: {result.stderr}")
     return result
 
   
