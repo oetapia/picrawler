@@ -82,7 +82,16 @@ def button_handler(pin):
 def run_script(script_path):
     env = os.environ.copy()
     env['VIRTUAL_ENV'] = '/home/pi/picrawler/examples/myenv'  # Adjust as necessary
-    result = subprocess.run([sys.executable, script_path], env=env, check=True, text=True, capture_output=True)
+    # Set working directory to project root so imports work correctly
+    project_root = '/home/pi/picrawler'
+    result = subprocess.run(
+        [sys.executable, script_path], 
+        env=env, 
+        cwd=project_root,  # Run from project root
+        check=True, 
+        text=True, 
+        capture_output=True
+    )
     print(f"Executed {script_path} with output: {result.stdout}")
     return result
 
