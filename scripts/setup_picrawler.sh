@@ -69,7 +69,7 @@ if [ -d "$VL53L0X_DIR" ]; then
     rm -rf "$VL53L0X_DIR"
 fi
 git clone https://github.com/pimoroni/VL53L0X-python.git "$VL53L0X_DIR"
-cd "$VL53L0X_DIR/python"
+cd "$VL53L0X_DIR"
 python setup.py install
 echo "      VL53L0X library installed"
 
