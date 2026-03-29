@@ -70,7 +70,12 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=['robot_hat>=2.0.0', 'readchar'],
+    # IMPORTANT: Must use robot-hat from SunFounder's GitHub
+    # The PyPI package 'robot_hat' (underscore) is a DIFFERENT library by another author!
+    install_requires=[
+        'robot-hat @ git+https://github.com/sunfounder/robot-hat.git@v2.0',
+        'readchar'
+    ],
  
     # To provide executable scripts, use entry points in preference to the
     # "scripts" keyword. Entry points provide cross-platform support and allow
