@@ -34,7 +34,13 @@ from components.utils.config import (
     SPEED_NORMAL, SPEED_MIN, SPEED_CAUTION,
     DISTANCE_WARNING, DISTANCE_SAFE, DISTANCE_DANGER,
     TILT_CAUTION, TILT_DANGER, BALANCE_DEADZONE, BALANCE_SPEED,
-    DISTANCE_SENSOR_TYPE
+    DISTANCE_SENSOR_TYPE,
+    # Timing parameters
+    MCU_RESET_DELAY, BALANCE_SETTLING_TIME, DISPLAY_UPDATE_INTERVAL,
+    STATUS_REPORT_INTERVAL, MAIN_LOOP_DELAY, ACTION_SETTLE_DELAY,
+    BACKUP_SETTLE_DELAY,
+    # Rear sensor thresholds
+    REAR_DISTANCE_THRESHOLD, REAR_DISTANCE_WARNING
 )
 
 
@@ -59,7 +65,7 @@ class AutonomousNavigator:
         # Reset MCU/GPIO for clean state
         safe_print("Resetting MCU...")
         utils.reset_mcu()
-        time.sleep(0.2)
+        time.sleep(MCU_RESET_DELAY)
         
         # Core hardware
         self.crawler = Picrawler()
@@ -68,11 +74,14 @@ class AutonomousNavigator:
         # Initialize refactored components
         self.motion = SmoothMotionController()
         self.sensors = SensorHub(distance_sensor_type)
-        self.obstacle_handler = ObstacleHandler()
+        
+        # Configure obstacle handler based on sensor capabilities
+        has_dual_sensors = getattr(self.sensors, 'has_dual_tof', False)
+        self.obstacle_handler = ObstacleHandler(has_dual_sensors=has_dual_sensors)
         self.stuck_detector = StuckDetector()
         
         # Initialize OLED display for navigation status
-        self.nav_display = NavDisplay(update_interval=0.25)
+        self.nav_display = NavDisplay(update_interval=DISPLAY_UPDATE_INTERVAL)
         self.nav_display.show_startup()
         
         # Statistics for floor vs obstacle tracking
@@ -135,7 +144,7 @@ class AutonomousNavigator:
         # CRITICAL FIX: Skip balance if movement was very recent
         # This prevents awkward "backward shuffle" after forward movement
         time_since_movement = time.time() - self.last_movement_time
-        if time_since_movement < 0.2:  # 200ms settling time
+        if time_since_movement < BALANCE_SETTLING_TIME:
             return
         
         try:
@@ -222,7 +231,7 @@ class AutonomousNavigator:
             self.announce("Emergency stop!")
         
         # Check rear sensor with tilt-awareness before backing up
-        rear_is_safe, rear_classified = self.sensors.is_backward_safe_tilt_aware(threshold=15.0)
+        rear_is_safe, rear_classified = self.sensors.is_backward_safe_tilt_aware(threshold=REAR_DISTANCE_THRESHOLD)
         
         if rear_classified.reading_type == ReadingType.FLOOR:
             # Rear sensor seeing floor (tilted backward) - safe to back up
@@ -235,17 +244,17 @@ class AutonomousNavigator:
             safe_print(f"{ICONS['warning']} Rear obstacle at {rear_classified.distance:.0f}cm - turning in place")
             self.crawler.do_action(action['turn_direction'], action['turn_amount'] + 1, 
                                   self.motion.get_speed())
-            time.sleep(0.4)
+            time.sleep(BACKUP_SETTLE_DELAY)
             return
         
         # Execute backward movement (rear is clear or just floor reading)
         self.crawler.do_action('backward', action['backward_steps'], self.motion.get_speed())
-        time.sleep(0.4)
+        time.sleep(BACKUP_SETTLE_DELAY)
         
         # Execute turn
         self.crawler.do_action(action['turn_direction'], action['turn_amount'], 
                               self.motion.get_speed())
-        time.sleep(0.3)
+        time.sleep(ACTION_SETTLE_DELAY)
     
     def execute_floor_danger_avoidance(self, danger_type, suggested_action):
         """
@@ -270,20 +279,20 @@ class AutonomousNavigator:
             self.motion.emergency_stop()
             pose = get_compact_pose()
             self.crawler.do_step(pose, SPEED_MIN)
-            time.sleep(0.5)
+            time.sleep(ACTION_SETTLE_DELAY + 0.2)  # Extra time for emergency
             return
         
         # Execute primary action
         if action['action']:
             self.crawler.do_action(action['action'], action['steps'], 
                                   self.motion.get_speed())
-            time.sleep(0.3)
+            time.sleep(ACTION_SETTLE_DELAY)
         
         # Execute secondary action if provided
         if action['secondary_action']:
             self.crawler.do_action(action['secondary_action'], action['secondary_steps'],
                                   self.motion.get_speed())
-            time.sleep(0.3)
+            time.sleep(ACTION_SETTLE_DELAY)
     
     def execute_escape_pattern(self):
         """Execute escape pattern when stuck."""
@@ -297,7 +306,7 @@ class AutonomousNavigator:
             if self.stop_event.is_set():
                 break
             self.crawler.do_action(action, steps, self.motion.get_speed())
-            time.sleep(0.3)
+            time.sleep(ACTION_SETTLE_DELAY)
         
         # Reset stuck detector
         self.stuck_detector.reset()
@@ -409,12 +418,11 @@ class AutonomousNavigator:
         self.announce("Beginning autonomous navigation")
         
         last_status_time = time.time()
-        status_interval = 30
         
         while self.running and not self.stop_event.is_set():
             try:
                 # Periodic status report
-                if time.time() - last_status_time > status_interval:
+                if time.time() - last_status_time > STATUS_REPORT_INTERVAL:
                     self.print_status()
                     last_status_time = time.time()
                 
@@ -446,7 +454,7 @@ class AutonomousNavigator:
                         "Navigation active",
                     ]))
                 
-                time.sleep(0.1)
+                time.sleep(MAIN_LOOP_DELAY)
             
             except KeyboardInterrupt:
                 safe_print(f"\n{ICONS['stop']} Manual stop")
