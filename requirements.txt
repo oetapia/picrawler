@@ -4,7 +4,8 @@
 # Core robot_hat library (SunFounder official package)
 # IMPORTANT: Must use robot-hat (hyphen), NOT robot_hat (underscore)
 # The underscore version is a different package by a different author!
-robot-hat==2.2.13
+# Install from GitHub for latest version with reset_mcu support
+git+https://github.com/sunfounder/robot-hat.git@v2.0
 
 # Keyboard input handling
 readchar
