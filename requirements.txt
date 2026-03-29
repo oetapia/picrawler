@@ -15,8 +15,8 @@ Pillow
 smbus2
 RPi.GPIO
 
-# VL53L0X ToF sensor
-VL53L0X
+# VL53L0X ToF sensor - Built from source in setup_picrawler.sh
+# (pip package doesn't work, requires pimoroni/VL53L0X-python)
 
 # Flask for REST API
 flask
