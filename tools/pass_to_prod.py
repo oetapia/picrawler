@@ -26,6 +26,8 @@ Usage:
     python3 tools/pass_to_prod.py                    # Interactive mode
     python3 tools/pass_to_prod.py --dry-run          # Preview only
     python3 tools/pass_to_prod.py --file path/to/file.py  # Migrate specific file
+    python3 tools/pass_to_prod.py --file f1.py --file f2.py  # Multiple files (single commit)
+    python3 tools/pass_to_prod.py --file f1.py -m "Fix bug in config"  # Custom commit message
     python3 tools/pass_to_prod.py --module components/sensors  # Migrate module
     python3 tools/pass_to_prod.py --all              # Migrate all production files
     python3 tools/pass_to_prod.py --validate         # Check v3.0 is clean
@@ -342,7 +344,7 @@ def preview_migration(files: List[str]):
         print()
 
 
-def migrate_files(files: List[str], dry_run: bool = False) -> bool:
+def migrate_files(files: List[str], dry_run: bool = False, commit_message: str = None) -> bool:
     """Migrate files from dev to v3.0 production branch."""
     if not files:
         print_warning("No files to migrate")
@@ -450,8 +452,11 @@ def migrate_files(files: List[str], dry_run: bool = False) -> bool:
         else:
             print_info("No encoding issues found")
 
-        # Commit
-        commit_msg = f"Production update: Migrated {migrated} files from dev\n\nFiles updated:\n"
+        # Commit - use custom message if provided, otherwise generate default
+        if commit_message:
+            commit_msg = commit_message + "\n\nFiles updated:\n"
+        else:
+            commit_msg = f"Production update: Migrated {migrated} file(s) from dev\n\nFiles updated:\n"
         for f in files[:15]:
             prod_path = RENAME_MAP.get(f, f)
             commit_msg += f"- {prod_path}\n"
@@ -552,16 +557,19 @@ Examples:
   python3 tools/pass_to_prod.py --dry-run                 # Preview all prod files
   python3 tools/pass_to_prod.py --validate                # Check v3.0 is clean
   python3 tools/pass_to_prod.py --file self_aware/data_logger.py
+  python3 tools/pass_to_prod.py --file f1.py --file f2.py # Multiple files (single commit)
+  python3 tools/pass_to_prod.py --file f1.py -m "Fix config bug"  # Custom message
   python3 tools/pass_to_prod.py --module components/sensors
   python3 tools/pass_to_prod.py --all                     # Migrate everything
         """
     )
 
-    parser.add_argument('--file', help='Migrate specific file')
+    parser.add_argument('--file', action='append', dest='files', help='Migrate specific file(s) - can be used multiple times')
     parser.add_argument('--module', help='Migrate entire module')
     parser.add_argument('--all', action='store_true', help='Migrate all production files')
     parser.add_argument('--dry-run', action='store_true', help='Preview without making changes')
     parser.add_argument('--validate', action='store_true', help='Validate v3.0 branch is clean')
+    parser.add_argument('-m', '--message', help='Custom commit message for the migration')
 
     args = parser.parse_args()
 
@@ -581,22 +589,24 @@ Examples:
         print_error(f"Must be on 'dev' branch (currently on '{current_branch}')")
         sys.exit(1)
 
-    if args.file:
-        if not os.path.exists(args.file):
-            print_error(f"File not found: {args.file}")
-            sys.exit(1)
-        migrate_files([args.file], dry_run=args.dry_run)
+    if args.files:
+        # Verify all files exist
+        for filepath in args.files:
+            if not os.path.exists(filepath):
+                print_error(f"File not found: {filepath}")
+                sys.exit(1)
+        migrate_files(args.files, dry_run=args.dry_run, commit_message=args.message)
 
     elif args.module:
         if not os.path.exists(args.module):
             print_error(f"Module not found: {args.module}")
             sys.exit(1)
         files = get_production_files(args.module)
-        migrate_files(files, dry_run=args.dry_run)
+        migrate_files(files, dry_run=args.dry_run, commit_message=args.message)
 
     elif args.all:
         files = get_all_production_files()
-        migrate_files(files, dry_run=args.dry_run)
+        migrate_files(files, dry_run=args.dry_run, commit_message=args.message)
 
     else:
         interactive_mode()
