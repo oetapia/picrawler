@@ -1,0 +1,26 @@
+# PiCrawler Python Dependencies
+# Install with: pip install -r requirements.txt
+
+# Core robot_hat library (SunFounder)
+robot_hat>=2.0.0
+
+# Keyboard input handling
+readchar
+
+# OLED Display
+adafruit-circuitpython-ssd1306
+Pillow
+
+# I2C and GPIO
+smbus2
+RPi.GPIO
+
+# VL53L0X ToF sensor
+VL53L0X
+
+# Flask for REST API
+flask
+flask-cors
+
+# Video conversion (optional)
+# opencv-python  # Heavy, only install if needed
