@@ -93,3 +93,22 @@ LEG_IR = {
     2: 'bl',  # Back Left
     3: 'br',  # Back Right
 }
+
+# ============================================================================
+# TIMING PARAMETERS
+# ============================================================================
+
+MCU_RESET_DELAY = 0.2           # Delay after MCU reset (seconds)
+BALANCE_SETTLING_TIME = 0.2     # Time to wait after movement before balance (seconds)
+DISPLAY_UPDATE_INTERVAL = 0.25  # OLED display refresh interval (seconds)
+STATUS_REPORT_INTERVAL = 30     # Status report interval (seconds)
+MAIN_LOOP_DELAY = 0.1           # Main navigation loop delay (seconds)
+ACTION_SETTLE_DELAY = 0.3       # Delay after actions to settle (seconds)
+BACKUP_SETTLE_DELAY = 0.4       # Delay after backup movements (seconds)
+
+# ============================================================================
+# REAR SENSOR THRESHOLDS (cm)
+# ============================================================================
+
+REAR_DISTANCE_THRESHOLD = 15.0  # Minimum safe distance for backward movement
+REAR_DISTANCE_WARNING = 25.0    # Warning threshold for rear sensor
