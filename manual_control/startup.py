@@ -9,9 +9,6 @@ between manual control (REST API) and autonomous navigation.
 Button controls:
 - USR button (SW): Start manual keyboard control (restapi3.py)
 - RST button: Start autonomous navigation (autonomous_navigator.py)
-
-When a subprocess ends (e.g., RST pressed in autonomous_navigator.py),
-the menu is automatically redisplayed so the user can select again.
 """
 
 import os
@@ -102,13 +99,6 @@ def check_robot_hat_status():
         return True
 
 
-def _show_menu():
-    """Display the function selection menu on OLED and announce via TTS."""
-    print("Showing function selection menu")
-    tts.say("Choose function")
-    oled.update_display(header="Function", text='USR: Keyboard, RST: Autopilot')
-
-
 def button_handler(pin):
     """Handle button press events with debouncing."""
     global last_press_time, service_started
@@ -139,15 +129,60 @@ def button_handler(pin):
         last_press_time = current_time
 
 
+def _release_buttons():
+    """Release button GPIO pins so subprocess can use them."""
+    global btn1, btn2, _pins
+    print("Releasing GPIO pins for subprocess...")
+    
+    for pin in [btn1, btn2]:
+        try:
+            if hasattr(pin, 'close'):
+                pin.close()
+            elif hasattr(pin, 'deinit'):
+                pin.deinit()
+        except Exception as e:
+            print(f"  Warning releasing pin: {e}")
+    
+    _pins.clear()
+    btn1 = None
+    btn2 = None
+    print("GPIO pins released.")
+
+
+def _setup_buttons():
+    """Re-create button pins and attach IRQ handlers."""
+    global btn1, btn2, _pins
+    print("Re-initializing button pins...")
+    
+    # Reset MCU first
+    reset_mcu()
+    time.sleep(0.1)
+    
+    # Re-create button pins
+    btn1 = Pin("SW", Pin.IN, Pin.PULL_UP)
+    btn2 = Pin("RST", Pin.IN, Pin.PULL_UP)
+    _pins.extend([btn1, btn2])
+    
+    # Re-attach IRQ handlers
+    btn1.irq(trigger=Pin.IRQ_FALLING | Pin.IRQ_RISING, handler=lambda pin: button_handler(btn1))
+    btn2.irq(trigger=Pin.IRQ_FALLING | Pin.IRQ_RISING, handler=lambda pin: button_handler(btn2))
+    
+    print("Button pins re-initialized.")
+
+
+def _show_menu():
+    """Display the function selection menu on OLED and announce via TTS."""
+    print("Showing function selection menu")
+    tts.say("Choose function")
+    oled.update_display(header="Function", text='USR: Keyboard, RST: Autopilot')
+
+
 def run_script(script_path):
     """
     Run a Python script as a subprocess using the project's virtual environment.
     
-    Uses the same Python interpreter that's running this script (sys.executable),
-    which will be the venv Python when started via systemd or setup scripts.
-    
-    After the subprocess exits (e.g., via RST button), resets state to allow
-    returning to the startup menu.
+    IMPORTANT: Releases GPIO pins before launching so subprocess can access them,
+    then reclaims pins when subprocess exits to allow return-to-menu functionality.
     """
     global service_started
     
@@ -165,29 +200,31 @@ def run_script(script_path):
     print(f"Running: {script_path}")
     print(f"Python: {python_executable}")
 
+    # CRITICAL: Release GPIO pins so subprocess can use them!
+    _release_buttons()
+
     try:
+        # Run subprocess - don't capture output so we can see errors in real-time
         result = subprocess.run(
             [python_executable, script_path],
             env=env,
             cwd=project_root,
-            check=True,
-            text=True,
-            capture_output=True
+            text=True
         )
-        print(f"Executed {script_path} with output: {result.stdout}")
-        if result.stderr:
-            print(f"Stderr: {result.stderr}")
+        print(f"Subprocess exited with code: {result.returncode}")
         return result
+        
     except subprocess.CalledProcessError as e:
-        print(f"Script exited with code {e.returncode}")
-        if e.stdout:
-            print(f"Stdout: {e.stdout}")
-        if e.stderr:
-            print(f"Stderr: {e.stderr}")
+        print(f"Script failed with code {e.returncode}")
+        
+    except Exception as e:
+        print(f"Error running script: {e}")
+        
     finally:
-        # Reset state to allow returning to menu
+        # Always reclaim GPIO and show menu when subprocess ends
         print("Subprocess ended - returning to startup menu")
         service_started = False
+        _setup_buttons()
         _show_menu()
 
 
