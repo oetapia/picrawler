@@ -9,6 +9,9 @@ between manual control (REST API) and autonomous navigation.
 Button controls:
 - USR button (SW): Start manual keyboard control (restapi3.py)
 - RST button: Start autonomous navigation (autonomous_navigator.py)
+
+When a subprocess ends (e.g., RST pressed in autonomous_navigator.py),
+the menu is automatically redisplayed so the user can select again.
 """
 
 import os
@@ -99,6 +102,13 @@ def check_robot_hat_status():
         return True
 
 
+def _show_menu():
+    """Display the function selection menu on OLED and announce via TTS."""
+    print("Showing function selection menu")
+    tts.say("Choose function")
+    oled.update_display(header="Function", text='USR: Keyboard, RST: Autopilot')
+
+
 def button_handler(pin):
     """Handle button press events with debouncing."""
     global last_press_time, service_started
@@ -135,7 +145,12 @@ def run_script(script_path):
     
     Uses the same Python interpreter that's running this script (sys.executable),
     which will be the venv Python when started via systemd or setup scripts.
+    
+    After the subprocess exits (e.g., via RST button), resets state to allow
+    returning to the startup menu.
     """
+    global service_started
+    
     env = os.environ.copy()
     project_root = '/home/pi/picrawler'
     venv_path = os.path.join(project_root, 'venv')
@@ -150,18 +165,30 @@ def run_script(script_path):
     print(f"Running: {script_path}")
     print(f"Python: {python_executable}")
 
-    result = subprocess.run(
-        [python_executable, script_path],
-        env=env,
-        cwd=project_root,
-        check=True,
-        text=True,
-        capture_output=True
-    )
-    print(f"Executed {script_path} with output: {result.stdout}")
-    if result.stderr:
-        print(f"Stderr: {result.stderr}")
-    return result
+    try:
+        result = subprocess.run(
+            [python_executable, script_path],
+            env=env,
+            cwd=project_root,
+            check=True,
+            text=True,
+            capture_output=True
+        )
+        print(f"Executed {script_path} with output: {result.stdout}")
+        if result.stderr:
+            print(f"Stderr: {result.stderr}")
+        return result
+    except subprocess.CalledProcessError as e:
+        print(f"Script exited with code {e.returncode}")
+        if e.stdout:
+            print(f"Stdout: {e.stdout}")
+        if e.stderr:
+            print(f"Stderr: {e.stderr}")
+    finally:
+        # Reset state to allow returning to menu
+        print("Subprocess ended - returning to startup menu")
+        service_started = False
+        _show_menu()
 
 
 def main():
