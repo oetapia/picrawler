@@ -323,8 +323,8 @@ def api_emergency_stop():
 # RST BUTTON HANDLING - Return to startup menu
 # ============================================================================
 
-def _setup_return_button():
-    """Setup RST button to return to startup menu."""
+def _setup_shutdown_button():
+    """Setup RST button for graceful shutdown."""
     global _pins
     try:
         # Reset MCU for clean GPIO state
@@ -336,21 +336,21 @@ def _setup_return_button():
         _pins.append(return_button)
         return_button.irq(
             trigger=Pin.IRQ_FALLING,
-            handler=_on_return_pressed
+            handler=_on_shutdown_pressed
         )
-        safe_print(f"  RST button configured for return-to-menu")
+        safe_print(f"  RST button configured for graceful shutdown")
         return return_button
     except Exception as e:
         safe_print(f"  Warning: Could not setup RST button: {e}")
         return None
 
 
-def _on_return_pressed(pin):
-    """Handle RST button press to return to startup menu."""
+def _on_shutdown_pressed(pin):
+    """Handle RST button press for graceful shutdown."""
     # Only respond to button press (falling edge = pressed)
     if pin.value() == 0:
-        safe_print(f"\n{ICONS['stop']} RST button pressed - returning to menu...")
-        tts.say("Returning to menu")
+        safe_print(f"\n{ICONS['stop']} RST button pressed - shutting down...")
+        tts.say("Shutting down")
         stop_event.set()
         # Perform cleanup before shutdown
         _shutdown_with_cleanup()
@@ -403,8 +403,8 @@ def initialize_robot():
     try:
         safe_print(f"{ICONS['robot']} Initializing PiCrawler systems...")
         
-        # Setup RST button for returning to menu
-        _setup_return_button()
+        # Setup RST button for graceful shutdown
+        _setup_shutdown_button()
         
         # Initialize image conversion
         imageConvert.main()

@@ -103,9 +103,9 @@ class AutonomousNavigator:
         self.total_steps = 0
         self.start_time = time.time()
         
-        # Setup RST button for returning to startup menu
+        # Setup RST button for graceful shutdown
         self._pins = []
-        self._setup_return_button()
+        self._setup_shutdown_button()
         atexit.register(self._cleanup_gpio)
         
         self._print_initialization_status()
@@ -138,26 +138,26 @@ class AutonomousNavigator:
     # BUTTON HANDLING - Return to startup menu
     # ========================================================================
     
-    def _setup_return_button(self):
-        """Setup RST button to return to startup menu."""
+    def _setup_shutdown_button(self):
+        """Setup RST button for graceful shutdown."""
         try:
-            self.return_button = Pin("RST", Pin.IN, Pin.PULL_UP)
-            self._pins.append(self.return_button)
-            self.return_button.irq(
+            self.shutdown_button = Pin("RST", Pin.IN, Pin.PULL_UP)
+            self._pins.append(self.shutdown_button)
+            self.shutdown_button.irq(
                 trigger=Pin.IRQ_FALLING,
-                handler=self._on_return_pressed
+                handler=self._on_shutdown_pressed
             )
-            safe_print(f"  RST button configured for return-to-menu")
+            safe_print(f"  RST button configured for graceful shutdown")
         except Exception as e:
             safe_print(f"  Warning: Could not setup RST button: {e}")
-            self.return_button = None
+            self.shutdown_button = None
     
-    def _on_return_pressed(self, pin):
-        """Handle RST button press to return to startup menu."""
+    def _on_shutdown_pressed(self, pin):
+        """Handle RST button press for graceful shutdown."""
         # Only respond to button press (falling edge = pressed)
         if pin.value() == 0:
-            safe_print(f"\n{ICONS['stop']} RST button pressed - returning to menu...")
-            self.announce("Returning to menu")
+            safe_print(f"\n{ICONS['stop']} RST button pressed - shutting down...")
+            self.announce("Shutting down")
             self.stop_event.set()
             self.running = False
     
