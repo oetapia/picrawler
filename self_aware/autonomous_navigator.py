@@ -12,12 +12,11 @@ This serves as a foundation for future ML-based autonomous navigation.
 
 import time
 import random
-import atexit
 from threading import Event
 
 # Note: Requires 'pip install -e .' from project root for components imports
 from picrawler import Picrawler
-from robot_hat import TTS, Pin, utils
+from robot_hat import TTS, utils
 
 # Import refactored components
 from components.navigation import SmoothMotionController, compute_balance_pose, ObstacleHandler
@@ -103,11 +102,6 @@ class AutonomousNavigator:
         self.total_steps = 0
         self.start_time = time.time()
         
-        # Setup RST button for returning to startup menu
-        self._pins = []
-        self._setup_return_button()
-        atexit.register(self._cleanup_gpio)
-        
         self._print_initialization_status()
         safe_print(f"{ICONS['check']} Autonomous Navigator ready!\n")
     
@@ -133,47 +127,6 @@ class AutonomousNavigator:
             self.previous_state = self.state
             self.state = new_state
             safe_print(f"State: {self.previous_state.value} -> {new_state.value}")
-    
-    # ========================================================================
-    # BUTTON HANDLING - Return to startup menu
-    # ========================================================================
-    
-    def _setup_return_button(self):
-        """Setup RST button to return to startup menu."""
-        try:
-            self.return_button = Pin("RST", Pin.IN, Pin.PULL_UP)
-            self._pins.append(self.return_button)
-            self.return_button.irq(
-                trigger=Pin.IRQ_FALLING,
-                handler=self._on_return_pressed
-            )
-            safe_print(f"  RST button configured for return-to-menu")
-        except Exception as e:
-            safe_print(f"  Warning: Could not setup RST button: {e}")
-            self.return_button = None
-    
-    def _on_return_pressed(self, pin):
-        """Handle RST button press to return to startup menu."""
-        # Only respond to button press (falling edge = pressed)
-        if pin.value() == 0:
-            safe_print(f"\n{ICONS['stop']} RST button pressed - returning to menu...")
-            self.announce("Returning to menu")
-            self.stop_event.set()
-            self.running = False
-    
-    def _cleanup_gpio(self):
-        """Release GPIO pins to prevent 'GPIO busy' errors on restart."""
-        safe_print("Cleaning up GPIO pins...")
-        for pin in self._pins:
-            try:
-                if hasattr(pin, 'close'):
-                    pin.close()
-                elif hasattr(pin, 'deinit'):
-                    pin.deinit()
-            except Exception as e:
-                safe_print(f"  Warning: Could not close pin: {e}")
-        self._pins.clear()
-        safe_print("GPIO cleanup complete.")
     
     # ========================================================================
     # BALANCE MANAGEMENT
