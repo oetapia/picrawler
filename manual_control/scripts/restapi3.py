@@ -1,8 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+PiCrawler REST API Server
+
+Provides a web-based control interface for manual robot control.
+Press RST button to return to the startup menu.
+"""
 import sys
 import os
 import socket
+import atexit
+from threading import Event
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 import json
@@ -47,9 +55,15 @@ ICONS = {
 
 # Import your existing modules
 from picrawler import Picrawler
-from robot_hat import TTS
+from robot_hat import TTS, Pin, utils
 from components.screens import imageConvert, oled
 from components.server.flask import create_app
+
+# ============================================================================
+# GLOBAL STATE FOR SHUTDOWN
+# ============================================================================
+stop_event = Event()
+_pins = []
 
 # Initialize global objects
 app = create_app(__name__, cors=True)
@@ -305,10 +319,92 @@ def api_emergency_stop():
     except Exception as e:
         return create_response(False, f"Emergency stop error: {str(e)}")
 
+# ============================================================================
+# RST BUTTON HANDLING - Return to startup menu
+# ============================================================================
+
+def _setup_return_button():
+    """Setup RST button to return to startup menu."""
+    global _pins
+    try:
+        # Reset MCU for clean GPIO state
+        safe_print("Resetting MCU for clean GPIO state...")
+        utils.reset_mcu()
+        time.sleep(0.1)
+        
+        return_button = Pin("RST", Pin.IN, Pin.PULL_UP)
+        _pins.append(return_button)
+        return_button.irq(
+            trigger=Pin.IRQ_FALLING,
+            handler=_on_return_pressed
+        )
+        safe_print(f"  RST button configured for return-to-menu")
+        return return_button
+    except Exception as e:
+        safe_print(f"  Warning: Could not setup RST button: {e}")
+        return None
+
+
+def _on_return_pressed(pin):
+    """Handle RST button press to return to startup menu."""
+    # Only respond to button press (falling edge = pressed)
+    if pin.value() == 0:
+        safe_print(f"\n{ICONS['stop']} RST button pressed - returning to menu...")
+        tts.say("Returning to menu")
+        stop_event.set()
+        # Perform cleanup before shutdown
+        _shutdown_with_cleanup()
+
+
+def _shutdown_with_cleanup():
+    """Perform cleanup and shutdown Flask server."""
+    try:
+        safe_print(f"{ICONS['recycle']} Cleaning up before shutdown...")
+        
+        # Return to compact pose for safe pickup
+        safe_print(f"{ICONS['robot']} Moving to compact pose...")
+        crawler.do_step(compact, 40)
+        time.sleep(0.5)
+        
+        # Clean up GPIO
+        _cleanup_gpio()
+        
+        safe_print(f"{ICONS['check']} Cleanup complete, exiting...")
+        
+        # Exit cleanly - use sys.exit for cleaner shutdown
+        sys.exit(0)
+        
+    except Exception as e:
+        safe_print(f"Shutdown error: {e}")
+        sys.exit(1)
+
+
+def _cleanup_gpio():
+    """Release GPIO pins to prevent 'GPIO busy' errors on restart."""
+    safe_print("Cleaning up GPIO pins...")
+    for pin in _pins:
+        try:
+            if hasattr(pin, 'close'):
+                pin.close()
+            elif hasattr(pin, 'deinit'):
+                pin.deinit()
+        except Exception as e:
+            safe_print(f"  Warning: Could not close pin: {e}")
+    _pins.clear()
+    safe_print("GPIO cleanup complete.")
+
+
+# Register cleanup handler
+atexit.register(_cleanup_gpio)
+
+
 def initialize_robot():
     """Initialize robot systems"""
     try:
         safe_print(f"{ICONS['robot']} Initializing PiCrawler systems...")
+        
+        # Setup RST button for returning to menu
+        _setup_return_button()
         
         # Initialize image conversion
         imageConvert.main()
@@ -339,6 +435,9 @@ def main():
     # Get local IP
     local_ip = get_local_ip()
     port = 5000
+    
+    # Display IP address on OLED screen
+    oled.update_display(header="Manual Control", text=f'{local_ip}:{port}')
     
     safe_print(f"{ICONS['network']} Starting server on {local_ip}:{port}")
     safe_print(f"{ICONS['mobile']} Web UI: http://{local_ip}:{port}/")
