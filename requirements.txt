@@ -17,6 +17,7 @@ Pillow
 # I2C and GPIO
 smbus2
 RPi.GPIO
+gpiozero  # Required by SunFounder robot-hat v2.0
 
 # VL53L0X ToF sensor - Built from source in setup_picrawler.sh
 # (pip package doesn't work, requires pimoroni/VL53L0X-python)
