@@ -14,7 +14,8 @@ import time
 from collections import deque
 
 from components.sensors.distance_sensor import create_distance_sensor
-from components.sensors import ir_distance, accelerometer
+from components.sensors import accelerometer
+# ir_distance is imported lazily in get_floor_sensors() to avoid GPIO conflicts
 from components.sensors.tilt_aware_tof import (
     classify_distance_reading,
     classify_rear_distance_reading,
@@ -163,6 +164,8 @@ class SensorHub:
             dict: Sensor readings {'fl': 0/1, 'fr': 0/1, 'bl': 0/1, 'br': 0/1}
         """
         try:
+            # Lazy import to avoid GPIO conflicts when ir_distance is not needed
+            from components.sensors import ir_distance
             return ir_distance.read_legs()
         except Exception:
             return {'fl': 0, 'fr': 0, 'bl': 0, 'br': 0}
