@@ -50,8 +50,14 @@ echo "[3/5] Activating virtual environment..."
 source "$VENV_DIR/bin/activate"
 echo "      Active Python: $(which python)"
 
+# Install system dependencies (required before pip packages)
+echo "[4/9] Installing system dependencies..."
+sudo apt-get update -qq
+sudo apt-get install -y portaudio19-dev  # Required for pyaudio
+echo "      System dependencies installed"
+
 # Upgrade pip
-echo "[4/5] Upgrading pip and installing dependencies..."
+echo "[5/9] Upgrading pip and installing dependencies..."
 pip install --upgrade pip wheel setuptools
 
 # Install requirements
@@ -63,13 +69,13 @@ else
 fi
 
 # Ensure correct robot-hat package (CRITICAL: PyPI has two packages with similar names!)
-echo "[5/8] Installing correct robot-hat package (SunFounder)..."
+echo "[6/9] Installing correct robot-hat package (SunFounder)..."
 pip uninstall robot_hat robot-hat -y 2>/dev/null || true
 pip install git+https://github.com/sunfounder/robot-hat.git@v2.0
 echo "      SunFounder robot-hat installed"
 
 # Build VL53L0X library from source (requires sudo for C library)
-echo "[6/8] Building VL53L0X ToF sensor library..."
+echo "[7/9] Building VL53L0X ToF sensor library..."
 VL53L0X_DIR="/tmp/VL53L0X-python"
 if [ -d "$VL53L0X_DIR" ]; then
     rm -rf "$VL53L0X_DIR"
@@ -81,12 +87,12 @@ python setup.py install 2>/dev/null || sudo "$VENV_DIR/bin/python" setup.py inst
 echo "      VL53L0X library installed"
 
 # Install project in editable mode
-echo "[7/8] Installing picrawler package (editable mode)..."
+echo "[8/9] Installing picrawler package (editable mode)..."
 cd "$PROJECT_ROOT"
 pip install -e .
 
 # Verify installation
-echo "[8/8] Verifying installation..."
+echo "[9/9] Verifying installation..."
 python -c "import VL53L0X; print('      VL53L0X: OK')" 2>/dev/null || echo "      VL53L0X: FAILED (may need sudo)"
 python -c "from components.sensors import sensor_fusion; print('      components: OK')" 2>/dev/null || echo "      components: FAILED"
 
