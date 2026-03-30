@@ -2,10 +2,11 @@ from robot_hat import Pin, TTS
 import time
 
 # One IR sensor per leg on digital pins D0-D3 (active-low: 0 = floor detected, 1 = no floor)
-front_left  = Pin("D3", Pin.IN)
-front_right = Pin("D1", Pin.IN)
-back_left   = Pin("D0", Pin.IN)
-back_right  = Pin("D2", Pin.IN)
+# Note: PULL_UP required for robot-hat v2.0+ (gpiozero backend requires explicit pull mode)
+front_left  = Pin("D3", Pin.IN, Pin.PULL_UP)
+front_right = Pin("D1", Pin.IN, Pin.PULL_UP)
+back_left   = Pin("D0", Pin.IN, Pin.PULL_UP)
+back_right  = Pin("D2", Pin.IN, Pin.PULL_UP)
 
 tts = TTS()
 

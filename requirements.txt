@@ -16,8 +16,12 @@ Pillow
 
 # I2C and GPIO
 smbus2
+smbus  # Also required by some robot-hat modules
 RPi.GPIO
 gpiozero  # Required by SunFounder robot-hat v2.0
+
+# Audio (TTS, music playback)
+pyaudio  # Note: requires 'sudo apt-get install portaudio19-dev' first
 
 # VL53L0X ToF sensor - Built from source in setup_picrawler.sh
 # (pip package doesn't work, requires pimoroni/VL53L0X-python)
