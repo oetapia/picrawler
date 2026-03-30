@@ -38,52 +38,49 @@ EMOJI_PATTERN = re.compile(
 # Character replacement mappings (Unicode -> ASCII)
 CHAR_REPLACEMENTS = {
     # Checkmarks and crosses
-    '✓': '[OK]',
-    '✗': '[X]',
-    '☑': '[X]',
-    '☒': '[ ]',
+    '-': '[OK]',
+    '-': '[X]',
+    '-': '[X]',
+    '-': '[ ]',
     
     # Arrows
-    '→': '->',
-    '←': '<-',
-    '↑': '^',
-    '↓': 'v',
-    '⇒': '=>',
-    '⇐': '<=',
+    '->': '->',
+    '<-': '<-',
+    '^': '^',
+    'v': 'v',
+    '=>': '=>',
+    '<=': '<=',
     
     # Warning and info symbols
-    '⚠': '[!]',
-    '⚡': '[!]',
-    '⛔': '[!]',
-    'ℹ': '[i]',
+    '-': '[!]',
+    '-': '[!]',
+    '-': '[!]',
+    '[i]': '[i]',
     
     # Quotation marks
     '"': '"',
     '"': '"',
-    ''': "'",
-    ''': "'",
-    '„': '"',
-    '‚': "'",
+    "'": "'",
     
     # Dashes
-    '–': '-',
-    '—': '--',
-    '−': '-',
+    '-': '-',
+    '--': '--',
+    '-': '-',
     
     # Other common symbols
-    '…': '...',
-    '•': '*',
-    '◦': '-',
-    '▪': '*',
-    '▫': '-',
-    '°': ' deg',
-    '±': '+/-',
-    '×': 'x',
-    '÷': '/',
-    '≈': '~=',
-    '≠': '!=',
-    '≤': '<=',
-    '≥': '>=',
+    '...': '...',
+    '*': '*',
+    '-': '-',
+    '-': '*',
+    '-': '-',
+    ' deg': ' deg',
+    '+/-': '+/-',
+    'x': 'x',
+    '/': '/',
+    '~=': '~=',
+    '!=': '!=',
+    '<=': '<=',
+    '>=': '>=',
 }
 
 
@@ -123,9 +120,9 @@ def fix_encoding(file_path: Path, backup: bool = True, dry_run: bool = False) ->
         emoji_matches = EMOJI_PATTERN.findall(content)
         if emoji_matches:
             emoji_count = len(emoji_matches)
-            content = EMOJI_PATTERN.sub('[EMOJI]', content)
+            content = EMOJI_PATTERN.sub('-', content)
             changes_made += emoji_count
-            changes_detail.append(f"  - Removed {emoji_count} emoji(s) -> '[EMOJI]'")
+            changes_detail.append(f"  - Removed {emoji_count} emoji(s) -> '-'")
         
         # Apply replacements
         for unicode_char, ascii_equiv in CHAR_REPLACEMENTS.items():
@@ -187,13 +184,13 @@ def process_directory(directory: Path, backup: bool = True, dry_run: bool = Fals
         success, changes, message = fix_encoding(file_path, backup, dry_run)
         
         if success and changes > 0:
-            print(f"  ✓ {message}\n")
+            print(f"  - {message}\n")
             total_changes += changes
             files_modified += 1
         elif success:
             print(f"  - {message}\n")
         else:
-            print(f"  ✗ {message}\n")
+            print(f"  - {message}\n")
     
     print("="*60)
     if dry_run:
@@ -245,11 +242,11 @@ Examples:
         print(message)
         
         if success and changes > 0:
-            print("\n✓ File processed successfully!")
+            print("\n- File processed successfully!")
         elif success:
             print("\n- No changes needed")
         else:
-            print("\n✗ Processing failed")
+            print("\n- Processing failed")
             sys.exit(1)
     
     elif path.is_dir():
