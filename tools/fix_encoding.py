@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# @steered SNARE-1 2026-09-12
 """
 Encoding Fix Script
 
@@ -38,49 +39,56 @@ EMOJI_PATTERN = re.compile(
 # Character replacement mappings (Unicode -> ASCII)
 CHAR_REPLACEMENTS = {
     # Checkmarks and crosses
-    '-': '[OK]',
-    '-': '[X]',
-    '-': '[X]',
-    '-': '[ ]',
+    '✓': '[OK]',
+    '✗': '[X]',
+    '☑': '[X]',
+    '☒': '[ ]',
     
     # Arrows
-    '->': '->',
-    '<-': '<-',
-    '^': '^',
-    'v': 'v',
-    '=>': '=>',
-    '<=': '<=',
+    '→': '->',
+    '←': '<-',
+    '↑': '^',
+    '↓': 'v',
+    '⇒': '=>',
+    '⇐': '<=',
     
     # Warning and info symbols
-    '-': '[!]',
-    '-': '[!]',
-    '-': '[!]',
-    '[i]': '[i]',
+    '⚠': '[!]',
+    '⚡': '[!]',
+    '⛔': '[!]',
+    'ℹ': '[i]',
     
     # Quotation marks
-    '"': '"',
-    '"': '"',
-    "'": "'",
+    # Do NOT run this script on its own source: doing so rewrites the keys
+    # below to plain ASCII, turning each entry into a no-op that then "fixes"
+    # every ordinary quote in every file. fix_encoding() refuses to process
+    # this file for that reason.
+    '“': '"',
+    '”': '"',
+    '‘': "'",
+    '’': "'",
+    '„': '"',
+    '‚': "'",
     
     # Dashes
-    '-': '-',
-    '--': '--',
-    '-': '-',
+    '–': '-',
+    '—': '--',
+    '−': '-',
     
     # Other common symbols
-    '...': '...',
-    '*': '*',
-    '-': '-',
-    '-': '*',
-    '-': '-',
-    ' deg': ' deg',
-    '+/-': '+/-',
-    'x': 'x',
-    '/': '/',
-    '~=': '~=',
-    '!=': '!=',
-    '<=': '<=',
-    '>=': '>=',
+    '…': '...',
+    '•': '*',
+    '◦': '-',
+    '▪': '*',
+    '▫': '-',
+    '°': ' deg',
+    '±': '+/-',
+    '×': 'x',
+    '÷': '/',
+    '≈': '~=',
+    '≠': '!=',
+    '≤': '<=',
+    '≥': '>=',
 }
 
 
@@ -101,7 +109,19 @@ def fix_encoding(file_path: Path, backup: bool = True, dry_run: bool = False) ->
     
     if not file_path.is_file():
         return False, 0, f"Not a file: {file_path}"
-    
+
+    # Refuse to fix this script. Its CHAR_REPLACEMENTS keys ARE the Unicode
+    # characters it strips, so processing itself rewrites every key to its own
+    # ASCII value. The table becomes a set of no-ops that then "fix" every
+    # plain quote and hyphen in every file, and the mangled quote keys break
+    # this file's syntax outright. This has happened twice already.
+    try:
+        if file_path.resolve() == Path(__file__).resolve():
+            return True, 0, f"Skipped {file_path.name} (cannot fix its own mapping table)"
+    except OSError:
+        pass
+
+
     try:
         # Read the file
         try:
@@ -120,9 +140,9 @@ def fix_encoding(file_path: Path, backup: bool = True, dry_run: bool = False) ->
         emoji_matches = EMOJI_PATTERN.findall(content)
         if emoji_matches:
             emoji_count = len(emoji_matches)
-            content = EMOJI_PATTERN.sub('-', content)
+            content = EMOJI_PATTERN.sub('[EMOJI]', content)
             changes_made += emoji_count
-            changes_detail.append(f"  - Removed {emoji_count} emoji(s) -> '-'")
+            changes_detail.append(f"  - Removed {emoji_count} emoji(s) -> '[EMOJI]'")
         
         # Apply replacements
         for unicode_char, ascii_equiv in CHAR_REPLACEMENTS.items():
@@ -169,7 +189,7 @@ def process_directory(directory: Path, backup: bool = True, dry_run: bool = Fals
         dry_run: If True, only report what would be changed
     """
     python_files = list(directory.rglob('*.py'))
-    
+
     if not python_files:
         print(f"No Python files found in {directory}")
         return
@@ -184,13 +204,13 @@ def process_directory(directory: Path, backup: bool = True, dry_run: bool = Fals
         success, changes, message = fix_encoding(file_path, backup, dry_run)
         
         if success and changes > 0:
-            print(f"  - {message}\n")
+            print(f"  ✓ {message}\n")
             total_changes += changes
             files_modified += 1
         elif success:
             print(f"  - {message}\n")
         else:
-            print(f"  - {message}\n")
+            print(f"  ✗ {message}\n")
     
     print("="*60)
     if dry_run:
@@ -242,11 +262,11 @@ Examples:
         print(message)
         
         if success and changes > 0:
-            print("\n- File processed successfully!")
+            print("\n✓ File processed successfully!")
         elif success:
             print("\n- No changes needed")
         else:
-            print("\n- Processing failed")
+            print("\n✗ Processing failed")
             sys.exit(1)
     
     elif path.is_dir():
