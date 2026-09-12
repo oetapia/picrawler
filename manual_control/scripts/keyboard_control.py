@@ -1,3 +1,4 @@
+# @steered SNARE-1 2026-09-12
 import os
 import sys
 import json
@@ -17,13 +18,20 @@ tts = TTS()
 speed = 80
 
 manual = '''
-Press keys on keyboard or use PS4 D-pad to control PiCrawler!
+Press keys on keyboard or use the PS4 / Xbox D-pad to control PiCrawler!
     W / Up: Forward
     A / Left: Turn left
     S / Down: Backward
     D / Right: Turn right
 
     Ctrl^C: Quit
+
+Gamepad face buttons (PS4 / Xbox):
+    X / A:        Look up          Triangle / Y: Look down
+    Circle / B:   Spread out       Square / X:   Compact
+    R1 / RB:      Greeting wave    L1 / LB:      Compact
+    R2 / RT:      Speed up         L2 / LT:      Speed down
+    Right stick:  Pose tilt        PS / Xbox:    Quit
 '''
 
 # Load static poses from shared JSON
@@ -177,22 +185,64 @@ def show_info():
     print(manual)
 
 
-def ps4_controller_thread():
+def _start_ps4_controller():
+    """Try the PS4 pad. Returns a listening-capable controller or raises."""
+    from components.sensors import ps4_control
+    controller = ps4_control.MyController(
+        on_input_change=handle_input,
+        interface="/dev/input/js0",
+        connecting_using_ds4drv=False
+    )
+    print("PS4 controller connected. Listening for input...")
+    return controller
+
+
+def _start_xbox_controller():
+    """Try the Xbox pad. Returns a listening-capable controller or raises."""
+    from components.sensors import xbox_control
+    controller = xbox_control.MyController(on_input_change=handle_input)
+    print("Xbox controller connected. Listening for input...")
+    return controller
+
+
+def controller_thread():
+    """
+    Watch for a gamepad and forward its input to handle_input().
+
+    PS4 is tried first so existing setups keep working; if it is not paired,
+    the Xbox pad is tried as a fallback. Both emit the same action strings,
+    so handle_input() does not care which one is in use.
+    """
+    backends = (
+        ("PS4", _start_ps4_controller),
+        ("Xbox", _start_xbox_controller),
+    )
+
     while True:
-        try:
-            from components.sensors import ps4_control
-            controller = ps4_control.MyController(
-                on_input_change=handle_input,
-                interface="/dev/input/js0",
-                connecting_using_ds4drv=False
-            )
-            print("PS4 controller connected. Listening for input...")
-            tts.say("controller connected")
-            controller.listen()
-        except Exception as e:
-            print(f"Error initializing PS4 controller: {e}")
-            print("Retrying in 5 seconds...")
-            sleep(5)
+        for label, start in backends:
+            try:
+                controller = start()
+            except Exception as e:
+                print(f"{label} controller unavailable: {e}")
+                continue
+
+            try:
+                tts.say("controller connected")
+                controller.listen()
+            except Exception as e:
+                print(f"{label} controller error: {e}")
+            finally:
+                close = getattr(controller, "close", None)
+                if callable(close):
+                    try:
+                        close()
+                    except Exception:
+                        pass
+            break
+        else:
+            print("No gamepad found (PS4 or Xbox). Retrying in 5 seconds...")
+
+        sleep(5)
 
 
 def main():
@@ -200,8 +250,8 @@ def main():
     oled.update_display(header="Keyboard Ctrl", text="Ready  WASD")
     show_info()
 
-    controller_thread = threading.Thread(target=ps4_controller_thread, daemon=True)
-    controller_thread.start()
+    gamepad_thread = threading.Thread(target=controller_thread, daemon=True)
+    gamepad_thread.start()
 
     while True:
         key = readchar.readkey().lower()
